@@ -13,32 +13,36 @@
 /// ```
 class UserModel {
   final int id;
-  final String name;
-  final String email;
+  final String usrLoginname;
+  final String usrRolecode;
+  final String empCode;
+  final String? foto;
 
   UserModel({
     required this.id,
-    required this.name,
-    required this.email,
+    required this.usrLoginname,
+    required this.usrRolecode,
+    required this.empCode,
+    this.foto,
   });
 
-  /// Membuat UserModel dari JSON (Map).
-  /// Dipanggil saat menerima response dari API Laravel.
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
       id: json['id'] as int,
-      name: json['name'] as String,
-      email: json['email'] as String,
+      usrLoginname: json['usr_loginname'] as String,
+      usrRolecode: json['usr_rolecode'] as String,
+      empCode: json['emp_code'] as String,
+      foto: json['foto'] as String?,
     );
   }
 
-  /// Mengubah UserModel ke JSON (Map).
-  /// Berguna jika perlu mengirim data user ke API.
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'name': name,
-      'email': email,
+      'usr_loginname': usrLoginname,
+      'usr_rolecode': usrRolecode,
+      'emp_code': empCode,
+      'foto': foto,
     };
   }
 }

@@ -15,33 +15,34 @@ class AppColors {
   AppColors._(); // Private constructor, class ini tidak perlu di-instantiate
 
   // === Warna Utama (Primary) ===
-  static const Color primary = Color(0xFF1E88E5); // Biru
-  static const Color primaryDark = Color(0xFF1565C0);
-  static const Color primaryLight = Color(0xFF42A5F5);
+  static const Color primary = Color(0xFF0D47A1); // Biru Gelap
+  static const Color primaryDark = Color(0xFF002171); // Biru Sangat Gelap
+  static const Color primaryLight = Color(0xFF5472D3); // Biru Terang
 
   // === Warna Aksen (Secondary) ===
-  static const Color secondary = Color(0xFFFF6F00); // Oranye (khas racing)
-  static const Color secondaryDark = Color(0xFFE65100);
-  static const Color secondaryLight = Color(0xFFFFA726);
+  static const Color secondary = Color(0xFF0288D1); // Biru Muda / Cyan
+  static const Color secondaryDark = Color(0xFF005B9F);
+  static const Color secondaryLight = Color(0xFF5EB8FF);
 
   // === Background ===
-  static const Color background = Color(0xFFF5F5F5);
-  static const Color surface = Color(0xFFFFFFFF);
-  static const Color scaffoldBackground = Color(0xFFFAFAFA);
+  static const Color background = Colors.white;
+  static const Color surface = Color(0xFFF1F5F9); // Abu-abu terang netral (Slate-100)
+  static const Color scaffoldBackground = Colors.white;
 
   // === Teks ===
-  static const Color textPrimary = Color(0xFF212121);
-  static const Color textSecondary = Color(0xFF757575);
-  static const Color textHint = Color(0xFFBDBDBD);
-  static const Color textOnPrimary = Color(0xFFFFFFFF);
+  static const Color textPrimary = Colors.black87;
+  static const Color textSecondary = Colors.black54;
+  static const Color textHint = Colors.black38;
+  static const Color textOnPrimary = Colors.white;
 
   // === Status ===
-  static const Color success = Color(0xFF4CAF50);
-  static const Color warning = Color(0xFFFFC107);
-  static const Color error = Color(0xFFE53935);
-  static const Color info = Color(0xFF29B6F6);
+  static const Color success = Colors.green;
+  static const Color warning = Colors.amber;
+  static const Color error = Colors.red;
+  static const Color info = Colors.lightBlue;
 
   // === Divider & Border ===
-  static const Color divider = Color(0xFFE0E0E0);
-  static const Color border = Color(0xFFBDBDBD);
+  static const Color divider = Colors.grey;
+  static const Color border = Colors.grey;
 }
+

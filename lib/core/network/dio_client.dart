@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -15,17 +16,17 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 /// final response = await dioClient.dio.get('/me');
 /// ```
 class DioClient {
+  static const String baseUrl = 'https://api-endogracing.rakiradigital.com/api';
+
   late final Dio dio;
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
   DioClient() {
     dio = Dio(
       BaseOptions(
-        // Base URL diambil dari file .env
-        baseUrl: dotenv.env['API_URL'] ?? 'http://127.0.0.1:8000/api',
-        // Timeout: jika server tidak merespons dalam 30 detik, batalkan.
-        connectTimeout: const Duration(seconds: 30),
-        receiveTimeout: const Duration(seconds: 30),
+        baseUrl: baseUrl,
+        connectTimeout: const Duration(seconds: 15),
+        receiveTimeout: const Duration(seconds: 15),
         // Header default yang dikirim ke Laravel
         headers: {
           'Content-Type': 'application/json',
@@ -43,6 +44,9 @@ class DioClient {
           final token = await _storage.read(key: 'auth_token');
           if (token != null) {
             options.headers['Authorization'] = 'Bearer $token';
+            debugPrint('🔑 DIO_CLIENT: Mengirim token (Length: ${token.length}) ke ${options.path}');
+          } else {
+            debugPrint('⚠️ DIO_CLIENT: Token KOSONG saat memanggil ${options.path}');
           }
           handler.next(options); // Lanjutkan request
         },

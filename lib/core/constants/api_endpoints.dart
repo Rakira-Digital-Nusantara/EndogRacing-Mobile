@@ -16,8 +16,9 @@ class ApiEndpoints {
   ApiEndpoints._();
 
   // === Autentikasi ===
-  static const String login = '/login';
-  static const String register = '/register';
+  static const String loginSales = '/login/sales';
+  static const String loginKandang = '/login/kandang';
+  static const String verifyBarcodeKandang = '/kandang/verify-barcode';
   static const String logout = '/logout';
   static const String me = '/me'; // GET data user yang sedang login
 

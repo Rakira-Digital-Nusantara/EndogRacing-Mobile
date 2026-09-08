@@ -1,5 +1,5 @@
-name: structify
-description: "Structify"
+name: endog_racing
+description: "Endog Racing Mobile App"
 publish_to: "none"
 
 version: 1.0.0+1
@@ -8,47 +8,97 @@ environment:
   sdk: ^3.8.1
 
 dependencies:
+  cached_network_image: ^3.4.1
+  camera: 0.10.5+9
   dio: ^5.11.0
+  fl_chart: ^1.2.0
   flutter:
     sdk: flutter
 
+  flutter_bloc: ^9.1.1
   flutter_dotenv: ^6.0.1
-  flutter_secure_storage: ^11.0.0
+  flutter_secure_storage: ^10.3.1
   flutter_svg: ^2.3.0
+  geolocator: ^14.0.2
   go_router: ^17.5.0
+  google_maps_flutter: ^2.18.0
+  image: ^4.8.0
+  image_picker: ^1.2.3
+  intl: ^0.20.3
   lucide_icons_flutter: ^3.1.14+2
+  mobile_scanner: ^7.4.0
   open_filex: ^4.7.0
-  package_info_plus: ^10.2.1
+  package_info_plus: ^9.0.1
   path_provider: ^2.1.6
-  permission_handler: ^13.0.0
+  permission_handler: 11.3.1
   provider: ^6.1.5+1
   shared_preferences: ^2.5.5
+  url_launcher: ^6.3.2
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
 
   flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.13.1
+  flutter_native_splash: ^2.4.0
 
 flutter:
   uses-material-design: true
 
+  assets:
+    - .env
+    - assets/images/
+    - assets/vectors/
+
   fonts:
-    - family: VisbyRoundCF
+    # Font Utama — HankenGrotesk (untuk text umum)
+    - family: HankenGrotesk
       fonts:
-        - asset: assets/fonts/VisbyRoundCF-ExtraLight.otf
-          weight: 200
-        - asset: assets/fonts/VisbyRoundCF-Light.otf
+        - asset: assets/fonts/FontUtama/HankenGrotesk-Light.ttf
           weight: 300
-        - asset: assets/fonts/VisbyRoundCF-Regular.otf
+        - asset: assets/fonts/FontUtama/HankenGrotesk-Regular.ttf
           weight: 400
-        - asset: assets/fonts/VisbyRoundCF-Medium.otf
+        - asset: assets/fonts/FontUtama/HankenGrotesk-Medium.ttf
           weight: 500
-        - asset: assets/fonts/VisbyRoundCF-DemiBold.otf
+        - asset: assets/fonts/FontUtama/HankenGrotesk-SemiBold.ttf
           weight: 600
-        - asset: assets/fonts/VisbyRoundCF-Bold.otf
+        - asset: assets/fonts/FontUtama/HankenGrotesk-Bold.ttf
           weight: 700
-        - asset: assets/fonts/VisbyRoundCF-ExtraBold.otf
+        - asset: assets/fonts/FontUtama/HankenGrotesk-ExtraBold.ttf
           weight: 800
-        - asset: assets/fonts/VisbyRoundCF-Heavy.otf
-          weight: 900
+        - asset: assets/fonts/FontUtama/HankenGrotesk-Italic.ttf
+          style: italic
+
+    # Font Angka — JetBrainsMono (untuk angka, timer, statistik)
+    - family: JetBrainsMono
+      fonts:
+        - asset: assets/fonts/FontKedua/JetBrainsMono-Light.ttf
+          weight: 300
+        - asset: assets/fonts/FontKedua/JetBrainsMono-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/FontKedua/JetBrainsMono-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/FontKedua/JetBrainsMono-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/FontKedua/JetBrainsMono-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/FontKedua/JetBrainsMono-ExtraBold.ttf
+          weight: 800
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/Icon_Logo_Square.png"
+  min_sdk_android: 21
+  adaptive_icon_background: "#000000"
+  adaptive_icon_foreground: "assets/images/Icon_Logo_Square.png"
+
+flutter_native_splash:
+  color: "#000000"
+  image: "assets/images/Logo Endog Racing Hijau.png"
+  android: true
+  ios: true
+  android_12:
+    color: "#000000"
+    image: "assets/images/Splash_Logo_Endog_Racing_Hijau.png"
