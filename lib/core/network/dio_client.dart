@@ -1,8 +1,8 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import '../../app/router.dart';
 /// DioClient adalah konfigurasi HTTP Client utama aplikasi.
 ///
 /// Class ini bertanggung jawab untuk:
@@ -17,10 +17,8 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 /// ```
 class DioClient {
   static const String baseUrl = 'https://api-endogracing.rakiradigital.com/api';
-
   late final Dio dio;
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
-
   DioClient() {
     dio = Dio(
       BaseOptions(
@@ -34,7 +32,6 @@ class DioClient {
         },
       ),
     );
-
     // Pasang interceptor (penyadap) untuk request dan response
     dio.interceptors.add(
       InterceptorsWrapper(
@@ -50,20 +47,49 @@ class DioClient {
           }
           handler.next(options); // Lanjutkan request
         },
-
         // --- SAAT MENERIMA RESPONSE ---
         onResponse: (response, handler) {
           handler.next(response); // Lanjutkan response seperti biasa
         },
-
         // --- SAAT TERJADI ERROR ---
-        onError: (DioException error, handler) {
-          // Jika server mengembalikan 401 (Unauthorized),
-          // artinya token sudah expired atau tidak valid.
-          // Anda bisa menambahkan logika auto-logout di sini nanti.
+        onError: (DioException error, handler) async {
+          final context = rootNavigatorKey.currentContext;
+          
           if (error.response?.statusCode == 401) {
-            // TODO: Tambahkan logika logout otomatis di sini
-            // Contoh: hapus token, arahkan ke halaman login
+            // Token Mati / Unauthorized
+            await _storage.delete(key: 'auth_token');
+            if (context != null) {
+              // Redirect ke halaman role-selection via GoRouter
+              context.go('/role-selection');
+            }
+          } else if (error.response?.statusCode == 429) {
+            // Rate Limiting
+            if (context != null) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Terlalu banyak percobaan. Silakan tunggu 1 menit.'),
+                  backgroundColor: Colors.orange,
+                  duration: Duration(seconds: 4),
+                ),
+              );
+            }
+          } else if (error.response?.statusCode == 403) {
+            // Forbidden / IDOR
+            if (context != null) {
+              showDialog(
+                context: context,
+                builder: (_) => AlertDialog(
+                  title: const Text('Akses Ditolak'),
+                  content: const Text('Ini bukan transaksi Anda.'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('OK'),
+                    ),
+                  ],
+                ),
+              );
+            }
           }
           handler.next(error); // Teruskan error ke pemanggil
         },

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "284421589177",
+    "project_id": "endogracing-d4c70",
+    "storage_bucket": "endogracing-d4c70.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:284421589177:android:8455b0aa209365ba33f368",
+        "android_client_info": {
+          "package_name": "com.endogracing.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBnMqh88z7sEvpalpFDRELhrEOdjXXXOUU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

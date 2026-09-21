@@ -12,7 +12,8 @@ import '../auth/providers/auth_provider.dart';
 import 'data/models/absensi_model.dart';
 
 class AbsensiScreen extends StatefulWidget {
-  const AbsensiScreen({super.key});
+  final String type;
+  const AbsensiScreen({super.key, this.type = 'masuk'});
 
   @override
   State<AbsensiScreen> createState() => _AbsensiScreenState();
@@ -28,73 +29,43 @@ class _AbsensiScreenState extends State<AbsensiScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<AbsensiProvider>().setRole(false);
       context.read<AbsensiProvider>().fetchHistory();
       _checkLocation();
     });
   }
 
   Future<void> _checkLocation() async {
+    // DUMMY BYPASS UNTUK TESTING
     setState(() {
       _isCheckingLocation = true;
       _locationMessage = "Mencari sinyal GPS...";
     });
 
-    bool serviceEnabled;
-    LocationPermission permission;
+    await Future.delayed(const Duration(milliseconds: 500)); // Simulasi loading
 
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
+    if (mounted) {
       setState(() {
-        _isCheckingLocation = false;
-        _locationMessage = "GPS tidak aktif";
-      });
-      return;
-    }
+        // Berikan posisi dummy agar tombol Absen selalu aktif
+        _currentPosition = Position(
+          longitude: 107.0,
+          latitude: -6.0,
+          timestamp: DateTime.now(),
+          accuracy: 1.0,
+          altitude: 1.0,
+          altitudeAccuracy: 1.0,
+          heading: 1.0,
+          headingAccuracy: 1.0,
+          speed: 1.0,
+          speedAccuracy: 1.0,
+        );
 
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        setState(() {
-          _isCheckingLocation = false;
-          _locationMessage = "Izin lokasi ditolak";
-        });
-        return;
-      }
-    }
-    
-    if (permission == LocationPermission.deniedForever) {
-      setState(() {
+        bool isDalamArea = true; // Selalu true untuk testing
+        _locationMessage = isDalamArea
+            ? "Berada di lokasi (Mode Testing)"
+            : "Di luar lokasi";
         _isCheckingLocation = false;
-        _locationMessage = "Izin lokasi ditolak permanen";
       });
-      return;
-    }
-
-    try {
-      Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-      );
-      
-      if (mounted) {
-        setState(() {
-          _currentPosition = position;
-          
-          // TODO: Ganti isDalamArea dengan pengecekan radius sungguhan ke koordinat kandang (kdg_lat, kdg_long)
-          // Menggunakan Geolocator.distanceBetween()
-          bool isDalamArea = true; // Dummy sementara selalu true
-          
-          _locationMessage = isDalamArea ? "Berada di lokasi" : "Di luar lokasi";
-          _isCheckingLocation = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _locationMessage = "Gagal mendapat lokasi";
-          _isCheckingLocation = false;
-        });
-      }
     }
   }
 
@@ -103,7 +74,10 @@ class _AbsensiScreenState extends State<AbsensiScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF6FAF7),
       appBar: AppBar(
-        title: const Text('Absensi Kandang', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+        title: const Text(
+          'Absensi Kandang',
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+        ),
         backgroundColor: Colors.white,
         foregroundColor: AppColors.primaryDark,
         elevation: 0,
@@ -137,8 +111,11 @@ class _AbsensiScreenState extends State<AbsensiScreen> {
 
   Widget _buildHeaderInfo() {
     final kandang = context.read<AuthProvider>().kandang;
-    String dateStr = DateFormat('EEEE, dd MMMM yyyy', 'id_ID').format(DateTime.now());
-    
+    String dateStr = DateFormat(
+      'EEEE, dd MMMM yyyy',
+      'id_ID',
+    ).format(DateTime.now());
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -152,11 +129,20 @@ class _AbsensiScreenState extends State<AbsensiScreen> {
             children: const [
               Icon(Icons.egg_alt_outlined, color: Colors.white70, size: 18),
               SizedBox(width: 8),
-              Text('PT ENDOG RACING', style: TextStyle(color: Colors.white70, fontWeight: FontWeight.bold)),
+              Text(
+                'PT ENDOG RACING',
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 4),
-          Text('${kandang?.kdgNama ?? "Kandang"} | $dateStr', style: const TextStyle(color: Colors.white, fontSize: 16)),
+          Text(
+            '${kandang?.kdgNama ?? "Kandang"} | $dateStr',
+            style: const TextStyle(color: Colors.white, fontSize: 16),
+          ),
         ],
       ),
     );
@@ -164,13 +150,17 @@ class _AbsensiScreenState extends State<AbsensiScreen> {
 
   Widget _buildLocationStatus() {
     final hasLocation = _currentPosition != null;
-    
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: _isCheckingLocation ? Colors.grey.shade300 : (hasLocation ? Colors.green.shade200 : Colors.red.shade200)),
+        border: Border.all(
+          color: _isCheckingLocation
+              ? Colors.grey.shade300
+              : (hasLocation ? Colors.green.shade200 : Colors.red.shade200),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -182,7 +172,13 @@ class _AbsensiScreenState extends State<AbsensiScreen> {
                 children: [
                   const Icon(Icons.location_on, color: Colors.grey, size: 20),
                   const SizedBox(width: 8),
-                  const Text('STATUS LOKASI', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+                  const Text(
+                    'STATUS LOKASI',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey,
+                    ),
+                  ),
                 ],
               ),
               IconButton(
@@ -190,19 +186,26 @@ class _AbsensiScreenState extends State<AbsensiScreen> {
                 onPressed: _checkLocation,
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
-              )
+              ),
             ],
           ),
           const SizedBox(height: 12),
           if (_isCheckingLocation)
-            const Center(child: Padding(padding: EdgeInsets.all(8.0), child: CircularProgressIndicator(strokeWidth: 2)))
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(8.0),
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            )
           else
             Row(
               children: [
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: hasLocation ? Colors.green.withOpacity(0.1) : Colors.red.withOpacity(0.1),
+                    color: hasLocation
+                        ? Colors.green.withOpacity(0.1)
+                        : Colors.red.withOpacity(0.1),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
@@ -219,7 +222,9 @@ class _AbsensiScreenState extends State<AbsensiScreen> {
                         _locationMessage,
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          color: hasLocation ? Colors.green.shade700 : Colors.red.shade700,
+                          color: hasLocation
+                              ? Colors.green.shade700
+                              : Colors.red.shade700,
                           fontSize: 16,
                         ),
                       ),
@@ -249,7 +254,13 @@ class _AbsensiScreenState extends State<AbsensiScreen> {
             children: [
               const Icon(Icons.access_time, color: Colors.grey, size: 20),
               const SizedBox(width: 8),
-              const Text('JADWAL SHIFT HARI INI', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+              const Text(
+                'JADWAL SHIFT HARI INI',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -257,7 +268,13 @@ class _AbsensiScreenState extends State<AbsensiScreen> {
           const SizedBox(height: 8),
           _buildTimeRow('Pulang', '15:00 – 17:00'),
           const Divider(height: 24),
-          Text('Waktu saat ini: ${DateFormat('HH:mm').format(DateTime.now())} WIB', style: TextStyle(color: Colors.blue.shade700, fontWeight: FontWeight.w600)),
+          Text(
+            'Waktu saat ini: ${DateFormat('HH:mm').format(DateTime.now())} WIB',
+            style: TextStyle(
+              color: Colors.blue.shade700,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ],
       ),
     );
@@ -281,7 +298,9 @@ class _AbsensiScreenState extends State<AbsensiScreen> {
           onPressed: () async {
             final result = await Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => const SelfieCameraScreen()),
+              MaterialPageRoute(
+                builder: (context) => const SelfieCameraScreen(),
+              ),
             );
             if (result != null && result is String) {
               setState(() {
@@ -295,7 +314,9 @@ class _AbsensiScreenState extends State<AbsensiScreen> {
             padding: const EdgeInsets.symmetric(vertical: 16),
             foregroundColor: AppColors.primary,
             side: const BorderSide(color: AppColors.primary),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
         ),
         if (_photoPath != null) ...[
@@ -316,29 +337,35 @@ class _AbsensiScreenState extends State<AbsensiScreen> {
               ),
             ),
           ),
-        ]
+        ],
       ],
     );
   }
 
   Widget _buildSubmitButton(AbsensiProvider provider) {
-    final bool canSubmit = _currentPosition != null && _photoPath != null && !provider.isLoading;
-    final String nextType = provider.nextAbsenType; // "Masuk" atau "Pulang"
-    
-    final Color btnColor = nextType == 'Masuk' ? AppColors.primary : Colors.orange.shade800;
+    final bool canSubmit =
+        _currentPosition != null && _photoPath != null && !provider.isLoading;
+    final String nextType = widget.type.isNotEmpty
+        ? widget.type[0].toUpperCase() + widget.type.substring(1).toLowerCase()
+        : 'Masuk';
+
+    final Color btnColor = nextType == 'Masuk'
+        ? AppColors.primary
+        : Colors.orange.shade800;
     final IconData btnIcon = nextType == 'Masuk' ? Icons.login : Icons.logout;
 
     return ElevatedButton.icon(
       onPressed: canSubmit
           ? () async {
               final success = await provider.submitAbsensi(
+                forcedTipeAbsen: nextType,
                 photoPath: _photoPath!,
                 latitude: _currentPosition!.latitude,
                 longitude: _currentPosition!.longitude,
               );
 
               if (!mounted) return;
-              
+
               if (success) {
                 showDialog(
                   context: context,
@@ -346,7 +373,8 @@ class _AbsensiScreenState extends State<AbsensiScreen> {
                   builder: (context) => SuccessDialog(
                     title: 'Absen $nextType Berhasil',
                     subtitle: 'Data absensi Anda telah tercatat di sistem.',
-                    time: '${TimeOfDay.now().hour.toString().padLeft(2, '0')}:${TimeOfDay.now().minute.toString().padLeft(2, '0')} WIB',
+                    time:
+                        '${TimeOfDay.now().hour.toString().padLeft(2, '0')}:${TimeOfDay.now().minute.toString().padLeft(2, '0')} WIB',
                     onPrimaryPressed: () {
                       Navigator.pop(context); // Tutup dialog
                       context.go('/home'); // Kembali ke home
@@ -363,10 +391,24 @@ class _AbsensiScreenState extends State<AbsensiScreen> {
               }
             }
           : null,
-      icon: provider.isLoading 
-        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) 
-        : Icon(btnIcon, size: 20),
-      label: Text(provider.isLoading ? 'MENGIRIM...' : 'ABSEN ${nextType.toUpperCase()}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1.0)),
+      icon: provider.isLoading
+          ? const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                color: Colors.white,
+                strokeWidth: 2,
+              ),
+            )
+          : Icon(btnIcon, size: 20),
+      label: Text(
+        provider.isLoading ? 'MENGIRIM...' : 'ABSEN ${nextType.toUpperCase()}',
+        style: const TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+          letterSpacing: 1.0,
+        ),
+      ),
       style: ElevatedButton.styleFrom(
         backgroundColor: btnColor,
         foregroundColor: Colors.white,
@@ -382,18 +424,21 @@ class _AbsensiScreenState extends State<AbsensiScreen> {
     if (provider.isLoading && provider.history.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text('📋 Riwayat Absensi', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            const Text(
+              '📋 Riwayat Absensi',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
             IconButton(
               icon: const Icon(Icons.refresh, size: 20),
               onPressed: () => provider.fetchHistory(),
-            )
+            ),
           ],
         ),
         const SizedBox(height: 8),
@@ -406,7 +451,11 @@ class _AbsensiScreenState extends State<AbsensiScreen> {
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: Colors.grey.shade200),
             ),
-            child: const Text('Belum ada riwayat absensi.', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
+            child: const Text(
+              'Belum ada riwayat absensi.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey),
+            ),
           )
         else
           Container(
@@ -430,24 +479,41 @@ class _AbsensiScreenState extends State<AbsensiScreen> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(item.tanggalAbsen, style: const TextStyle(fontWeight: FontWeight.bold)),
-                          Text(item.status ?? 'Tercatat', style: TextStyle(fontSize: 12, color: item.status == 'Terlambat' ? Colors.red : Colors.grey)),
+                          Text(
+                            item.tanggalAbsen,
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          Text(
+                            item.status ?? 'Tercatat',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: item.status == 'Terlambat'
+                                  ? Colors.red
+                                  : Colors.grey,
+                            ),
+                          ),
                         ],
                       ),
                       Row(
                         children: [
                           Icon(
-                            item.tipeAbsen.toLowerCase() == 'masuk' ? Icons.login : Icons.logout, 
-                            size: 16, 
-                            color: item.tipeAbsen.toLowerCase() == 'masuk' ? Colors.green : Colors.orange
+                            item.tipeAbsen.toLowerCase() == 'masuk'
+                                ? Icons.login
+                                : Icons.logout,
+                            size: 16,
+                            color: item.tipeAbsen.toLowerCase() == 'masuk'
+                                ? Colors.green
+                                : Colors.orange,
                           ),
                           const SizedBox(width: 4),
                           Text(
                             item.waktuAbsen ?? item.tipeAbsen,
                             style: TextStyle(
                               fontWeight: FontWeight.w600,
-                              color: item.tipeAbsen.toLowerCase() == 'masuk' ? Colors.green : Colors.orange
-                            )
+                              color: item.tipeAbsen.toLowerCase() == 'masuk'
+                                  ? Colors.green
+                                  : Colors.orange,
+                            ),
                           ),
                         ],
                       ),

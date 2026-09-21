@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:endog_racing/core/constants/app_colors.dart';
 import 'package:provider/provider.dart';
-import '../../../core/constants/app_colors.dart';
 import '../providers/sales_provider.dart';
-
 import 'sales_dashboard_screen.dart';
-import 'sales_history_screen.dart';
-import 'sales_stok_screen.dart';
-import 'sales_deposit_screen.dart';
-import 'sales_profile_screen.dart';
+import 'transactions/sales_history_screen.dart';
+import 'inventory/sales_stok_screen.dart';
+import '../../customers/screens/customer_list_screen.dart';
+import 'profile/sales_profile_screen.dart';
 
 class MainSalesScreen extends StatefulWidget {
   const MainSalesScreen({super.key});
@@ -27,9 +26,27 @@ class _MainSalesScreenState extends State<MainSalesScreen> {
         });
       },
     ),
-    const SalesStokScreen(),
-    const SalesDepositScreen(),
-    const SalesHistoryScreen(),
+    SalesHistoryScreen(
+      onProfileTap: () {
+        setState(() {
+          _currentIndex = 4;
+        });
+      },
+    ),
+    CustomerListScreen(
+      onProfileTap: () {
+        setState(() {
+          _currentIndex = 4;
+        });
+      },
+    ),
+    SalesStokScreen(
+      onProfileTap: () {
+        setState(() {
+          _currentIndex = 4;
+        });
+      },
+    ),
     const SalesProfileScreen(),
   ];
 
@@ -39,6 +56,7 @@ class _MainSalesScreenState extends State<MainSalesScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
        context.read<SalesProvider>().fetchPenjualanForm();
        context.read<SalesProvider>().fetchSalesHistory();
+       context.read<SalesProvider>().fetchSalesProfile();
     });
   }
 
@@ -74,8 +92,8 @@ class _MainSalesScreenState extends State<MainSalesScreen> {
             ),
             _buildNavItem(
               index: 1,
-              icon: _currentIndex == 1 ? Icons.warehouse : Icons.warehouse_outlined,
-              label: 'STOK',
+              icon: _currentIndex == 1 ? Icons.receipt_long : Icons.receipt_long_outlined,
+              label: 'PENJUALAN',
             ),
             _buildNavItem(
               index: 2,
@@ -84,8 +102,8 @@ class _MainSalesScreenState extends State<MainSalesScreen> {
             ),
             _buildNavItem(
               index: 3,
-              icon: _currentIndex == 3 ? Icons.receipt_long : Icons.receipt_long_outlined,
-              label: 'PENJUALAN',
+              icon: _currentIndex == 3 ? Icons.warehouse : Icons.warehouse_outlined,
+              label: 'STOK',
             ),
             _buildNavItem(
               index: 4,

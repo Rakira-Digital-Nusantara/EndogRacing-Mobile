@@ -1,13 +1,13 @@
-import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:dio/dio.dart';
+import '../../../shared/widgets/app_button.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/network/dio_client.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../../shared/widgets/success_screen.dart';
 import '../../../shared/widgets/kandang_header_card.dart';
-import '../../../shared/widgets/app_button.dart';
+import 'package:dio/dio.dart';
 
 class InputOvkScreen extends StatefulWidget {
   const InputOvkScreen({super.key});
@@ -20,14 +20,11 @@ class _InputOvkScreenState extends State<InputOvkScreen> {
   bool _isLoadingForm = false;
   String _formError = '';
   bool _isSubmitting = false;
-
   // Data Dropdown
   List<dynamic> _ovkItems = [];
-
   // State
   DateTime _selectedDate = DateTime.now();
   final List<Map<String, dynamic>> _inputRows = [];
-
   @override
   void initState() {
     super.initState();
@@ -37,12 +34,10 @@ class _InputOvkScreenState extends State<InputOvkScreen> {
       'qty_pakai': 0.0,
       'controller': TextEditingController(text: '0'),
     });
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _fetchFormData();
     });
   }
-
   @override
   void dispose() {
     for (var row in _inputRows) {
@@ -52,15 +47,13 @@ class _InputOvkScreenState extends State<InputOvkScreen> {
     }
     super.dispose();
   }
-
   Future<void> _fetchFormData() async {
     setState(() {
       _isLoadingForm = true;
       _formError = '';
     });
-
     try {
-      final response = await DioClient().dio.get('/pemakaian-ovk/form?gudang_code=GDG-001');
+      final response = await DioClient().dio.get('/pemakaian-ovk/form?gudang_code=GDG0001');
       if (response.statusCode == 200) {
         final data = response.data['data'] ?? response.data;
         if (data is Map && data.containsKey('items')) {
@@ -88,7 +81,6 @@ class _InputOvkScreenState extends State<InputOvkScreen> {
       if (mounted) setState(() => _isLoadingForm = false);
     }
   }
-
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -119,7 +111,6 @@ class _InputOvkScreenState extends State<InputOvkScreen> {
       });
     }
   }
-
   void _addRow() {
     setState(() {
       _inputRows.add({
@@ -129,7 +120,6 @@ class _InputOvkScreenState extends State<InputOvkScreen> {
       });
     });
   }
-
   void _removeRow(int index) {
     setState(() {
       final controller = _inputRows[index]['controller'] as TextEditingController;
@@ -137,23 +127,19 @@ class _InputOvkScreenState extends State<InputOvkScreen> {
       _inputRows.removeAt(index);
     });
   }
-
   Future<void> _submitData() async {
     // Validasi
     final validRows = _inputRows.where((row) => row['sku_product'] != null && (row['qty_pakai'] as double) > 0).toList();
-
     if (validRows.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Harap lengkapi setidaknya 1 pemakaian Obat/Vaksin dengan Qty > 0'), backgroundColor: Colors.red),
       );
       return;
     }
-
     final auth = context.read<AuthProvider>();
     final kdgCode = auth.kandang?.kdgCode ?? 'KDG-001';
-
     final payload = {
-      "gudang_code": "GDG-001",
+      "gudang_code": "GDG0001",
       "kdg_code": kdgCode,
       "tanggal": "${_selectedDate.year}-${_selectedDate.month.toString().padLeft(2, '0')}-${_selectedDate.day.toString().padLeft(2, '0')}",
       "details": validRows.map((row) => {
@@ -161,9 +147,7 @@ class _InputOvkScreenState extends State<InputOvkScreen> {
         "qty_pakai": row['qty_pakai']
       }).toList()
     };
-
     setState(() => _isSubmitting = true);
-
     try {
       final response = await DioClient().dio.post('/pemakaian-ovk', data: payload);
       
@@ -185,6 +169,39 @@ class _InputOvkScreenState extends State<InputOvkScreen> {
       } else {
         throw Exception('Gagal menyimpan data');
       }
+    } on DioException catch (e) {
+      if (mounted) {
+        String errorMessage = 'Terjadi kesalahan koneksi';
+        if (e.response != null && e.response?.data != null) {
+          final data = e.response?.data;
+          if (data is Map) {
+            if (data.containsKey('message')) {
+              errorMessage = data['message'].toString();
+            } else {
+              errorMessage = 'Gagal menyimpan data';
+            }
+            if (data.containsKey('errors')) {
+              if (data['errors'] is Map) {
+                final errorValues = (data['errors'] as Map).values;
+                errorMessage += '\n' + errorValues.map((v) => v is List ? v.join('\n') : v.toString()).join('\n');
+              } else {
+                errorMessage += '\n' + data['errors'].toString();
+              }
+            }
+          } else {
+            errorMessage = 'Backend Response:\n${data.toString()}';
+          }
+        } else {
+          errorMessage = 'Error ${e.response?.statusCode}: ${e.response?.statusMessage}';
+        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 10),
+          ),
+        );
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -199,7 +216,6 @@ class _InputOvkScreenState extends State<InputOvkScreen> {
   @override
   Widget build(BuildContext context) {
     final kandangName = context.watch<AuthProvider>().kandang?.kdgNama ?? 'Kandang 1';
-
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
@@ -235,7 +251,6 @@ class _InputOvkScreenState extends State<InputOvkScreen> {
                                   decoration: BoxDecoration(color: Colors.red.shade50, borderRadius: BorderRadius.circular(8)),
                                   child: Text(_formError, style: TextStyle(color: Colors.red.shade700)),
                                 ),
-
                               // 1. Pilih Tanggal
                               const Text('Tanggal Pemakaian', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
                               const SizedBox(height: 8),
@@ -262,15 +277,12 @@ class _InputOvkScreenState extends State<InputOvkScreen> {
                                 ),
                               ),
                               const SizedBox(height: 24),
-
                               // 2. Daftar Item
                               const Text('Daftar Obat / Vaksin', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
                               const SizedBox(height: 8),
-
                               ..._inputRows.asMap().entries.map((entry) {
                                 final index = entry.key;
                                 final row = entry.value;
-
                                 return Container(
                                   margin: const EdgeInsets.only(bottom: 16),
                                   padding: const EdgeInsets.all(16),
@@ -347,7 +359,6 @@ class _InputOvkScreenState extends State<InputOvkScreen> {
                                   ),
                                 );
                               }).toList(),
-
                               // Tombol Tambah Baris
                               SizedBox(
                                 width: double.infinity,
@@ -372,7 +383,6 @@ class _InputOvkScreenState extends State<InputOvkScreen> {
                     ),
                   ),
                 ),
-
                 // Tombol Simpan
                 Container(
                   padding: const EdgeInsets.all(20),
@@ -396,7 +406,6 @@ class _InputOvkScreenState extends State<InputOvkScreen> {
     );
   }
 }
-
 // ============================================================================
 // WIDGET INPUT DECIMAL (BERAT / QTY)
 // ============================================================================
@@ -404,33 +413,27 @@ class _DecimalInput extends StatefulWidget {
   final double value;
   final Function(double) onChanged;
   final Color accentColor;
-
   const _DecimalInput({
     required this.value,
     required this.onChanged,
     required this.accentColor,
   });
-
   @override
   State<_DecimalInput> createState() => _DecimalInputState();
 }
-
 class _DecimalInputState extends State<_DecimalInput> {
   late TextEditingController _controller;
-
   @override
   void initState() {
     super.initState();
     _controller = TextEditingController(text: _formatValue(widget.value));
   }
-
   String _formatValue(double val) {
     if (val == val.toInt()) {
       return val.toInt().toString();
     }
     return val.toString();
   }
-
   @override
   void didUpdateWidget(covariant _DecimalInput oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -442,17 +445,14 @@ class _DecimalInputState extends State<_DecimalInput> {
       }
     }
   }
-
   void _increment() {
     widget.onChanged(widget.value + 1);
   }
-
   void _decrement() {
     if (widget.value > 0) {
       widget.onChanged(widget.value - 1);
     }
   }
-
   @override
   Widget build(BuildContext context) {
     const bg = Color(0xFFF1F5F9);
@@ -523,3 +523,4 @@ class _DecimalInputState extends State<_DecimalInput> {
     );
   }
 }
+

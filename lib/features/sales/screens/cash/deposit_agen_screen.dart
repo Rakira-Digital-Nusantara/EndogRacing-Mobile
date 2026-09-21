@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../core/constants/app_colors.dart';
+import 'package:endog_racing/core/constants/app_colors.dart';
+import 'package:endog_racing/core/utils/currency_formatter.dart';
 
 class DepositAgenScreen extends StatefulWidget {
   const DepositAgenScreen({super.key});
@@ -63,6 +64,7 @@ class _DepositAgenScreenState extends State<DepositAgenScreen> {
               TextFormField(
                 decoration: const InputDecoration(labelText: 'Nominal Setoran (Rp)', border: OutlineInputBorder()),
                 keyboardType: TextInputType.number,
+                inputFormatters: [CurrencyInputFormatter()],
               ),
               const SizedBox(height: 16),
               TextFormField(

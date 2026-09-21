@@ -1,48 +1,42 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../core/constants/app_colors.dart';
-import '../../auth/providers/auth_provider.dart';
-import '../../../core/utils/currency_formatter.dart';
-import '../providers/sales_provider.dart';
-import '../utils/sales_notification_dialog.dart';
-import 'sales_customer_input_screen.dart';
-
-class SalesDepositScreen extends StatefulWidget {
+import 'package:endog_racing/core/constants/app_colors.dart';
+import 'package:endog_racing/core/utils/currency_formatter.dart';
+import 'package:endog_racing/features/customers/screens/customer_transaction_history_screen.dart';
+import 'package:endog_racing/features/customers/screens/customer_input_screen.dart';
+import 'package:endog_racing/core/constants/app_colors.dart';
+import 'package:endog_racing/features/auth/providers/auth_provider.dart';
+import 'package:endog_racing/core/utils/currency_formatter.dart';
+import 'package:endog_racing/features/sales/utils/sales_notification_dialog.dart';
+import 'package:endog_racing/features/customers/screens/customer_input_screen.dart';
+import 'package:endog_racing/features/customers/providers/customer_provider.dart';
+class CustomerListScreen extends StatefulWidget {
   final VoidCallback? onProfileTap;
-
-  const SalesDepositScreen({super.key, this.onProfileTap});
-
+  const CustomerListScreen({super.key, this.onProfileTap});
   @override
-  State<SalesDepositScreen> createState() => _SalesDepositScreenState();
+  State<CustomerListScreen> createState() => _CustomerListScreenState();
 }
-
-class _SalesDepositScreenState extends State<SalesDepositScreen> {
+class _CustomerListScreenState extends State<CustomerListScreen> {
   String _searchQuery = '';
-
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<SalesProvider>().fetchPenjualanForm();
+      context.read<CustomerProvider>().fetchCustomers();
     });
   }
-
-
-
   @override
   Widget build(BuildContext context) {
-    final sales = context.watch<SalesProvider>();
+    final customerProv = context.watch<CustomerProvider>();
     final auth = context.watch<AuthProvider>();
     final userFoto = auth.user?.foto;
-
     // Filter customers
-    final customers = sales.customers.where((c) {
-      final name = (c['name'] ?? '').toString().toLowerCase();
-      final code = (c['code'] ?? '').toString().toLowerCase();
+    final customers = customerProv.customers.where((c) {
+      final name = (c['customer_name'] ?? '').toString().toLowerCase();
+      final code = (c['customer_code'] ?? '').toString().toLowerCase();
       final query = _searchQuery.toLowerCase();
       return name.contains(query) || code.contains(query);
     }).toList();
-
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
@@ -75,6 +69,7 @@ class _SalesDepositScreenState extends State<SalesDepositScreen> {
                     color: Color(0xFF1E293B),
                   ),
                 ),
+
                 const SizedBox(height: 2),
                 Text(
                   'PETUGAS SALES',
@@ -90,21 +85,40 @@ class _SalesDepositScreenState extends State<SalesDepositScreen> {
           ],
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_none, color: Color(0xFF475569)),
-            onPressed: () {
-              SalesNotificationDialog.show(context);
-            },
-          ),
+          const NotificationBell(),
           GestureDetector(
             onTap: widget.onProfileTap,
             child: Container(
               margin: const EdgeInsets.only(right: 20, left: 4),
-              child: CircleAvatar(
-                radius: 16,
-                backgroundImage: (userFoto != null && userFoto.isNotEmpty) 
-                  ? NetworkImage(userFoto) 
-                  : const NetworkImage('https://i.pravatar.cc/150?img=33'),
+              child: Container(
+                width: 32.0,
+                height: 32.0,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Color(0xFFE2E8F0),
+                      Color(0xFFCBD5E1),
+                    ],
+                  ),
+                  border: Border.all(color: Colors.white, width: 2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Center(
+                  child: Icon(
+                    Icons.delivery_dining_rounded, 
+                    color: const Color(0xFF64748B), 
+                    size: 19.2,
+                  ),
+                ),
               ),
             ),
           ),
@@ -118,16 +132,20 @@ class _SalesDepositScreenState extends State<SalesDepositScreen> {
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const SalesCustomerInputScreen()),
-          );
+            MaterialPageRoute(builder: (context) => const CustomerInputScreen()),
+          ).then((_) {
+            if (mounted) context.read<CustomerProvider>().fetchCustomers();
+          });
         },
         backgroundColor: AppColors.primary,
         icon: const Icon(Icons.person_add_alt_1_rounded, color: Colors.white),
         label: const Text('Tambah', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
       ),
-      body: sales.isLoading && sales.customers.isEmpty
+      body: customerProv.isLoading && customerProv.customers.isEmpty
           ? const Center(child: CircularProgressIndicator())
-          : Column(
+          : RefreshIndicator(
+              onRefresh: () => customerProv.fetchCustomers(),
+              child: Column(
               children: [
                 // Search Bar
                 Container(
@@ -190,12 +208,11 @@ class _SalesDepositScreenState extends State<SalesDepositScreen> {
                         itemCount: customers.length,
                         itemBuilder: (context, index) {
                           final c = customers[index];
-                          final code = c['code']?.toString() ?? '-';
-                          final name = c['name']?.toString() ?? '-';
-                          // Dummy Data for expanded view
-                          final dummySaldo = (c['saldo'] as num?)?.toDouble() ?? 1500000.0; 
-                          final dummyPiutang = 500000.0;
-
+                          final code = c['customer_code']?.toString() ?? '-';
+                          final name = c['customer_name']?.toString() ?? '-';
+                          final address = c['address']?.toString() ?? '-';
+                          final phone = c['phone']?.toString() ?? '-';
+                          final piutang = double.tryParse(c['sisa_piutang']?.toString() ?? '0') ?? 0.0;
                           return Container(
                             margin: const EdgeInsets.only(bottom: 12),
                             decoration: BoxDecoration(
@@ -249,31 +266,51 @@ class _SalesDepositScreenState extends State<SalesDepositScreen> {
                                   const SizedBox(height: 12),
                                   
                                   // Alamat & Telepon (Dummy)
-                                  Row(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      const Icon(Icons.location_on_outlined, size: 16, color: AppColors.textSecondary),
-                                      const SizedBox(width: 6),
-                                      Expanded(
-                                        child: Text(
-                                          'Jl. Merdeka No. 123, Kec. Cibadak, Sukabumi (Dummy)',
-                                          style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                                  Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey.shade50,
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(color: Colors.grey.shade100),
+                                    ),
+                                    child: Column(
+                                      children: [
+                                        Row(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Container(
+                                              padding: const EdgeInsets.all(6),
+                                              decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.1), shape: BoxShape.circle),
+                                              child: const Icon(Icons.location_on_rounded, size: 14, color: AppColors.primary),
+                                            ),
+                                            const SizedBox(width: 12),
+                                            Expanded(
+                                              child: Text(
+                                                address,
+                                                style: TextStyle(fontSize: 13, color: Colors.grey.shade700, height: 1.4),
+                                              ),
+                                            ),
+                                          ],
                                         ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Row(
-                                    children: [
-                                      const Icon(Icons.phone_outlined, size: 16, color: AppColors.textSecondary),
-                                      const SizedBox(width: 6),
-                                      Expanded(
-                                        child: Text(
-                                          '0812-3456-7890 (Dummy)',
-                                          style: TextStyle(fontSize: 13, color: Colors.grey.shade600, fontWeight: FontWeight.w500),
+                                        const SizedBox(height: 12),
+                                        Row(
+                                          children: [
+                                            Container(
+                                              padding: const EdgeInsets.all(6),
+                                              decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.1), shape: BoxShape.circle),
+                                              child: const Icon(Icons.phone_rounded, size: 14, color: AppColors.primary),
+                                            ),
+                                            const SizedBox(width: 12),
+                                            Expanded(
+                                              child: Text(
+                                                phone,
+                                                style: TextStyle(fontSize: 13, color: Colors.grey.shade700, fontWeight: FontWeight.bold),
+                                              ),
+                                            ),
+                                          ],
                                         ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
                                   const SizedBox(height: 16),
                                   
@@ -290,27 +327,58 @@ class _SalesDepositScreenState extends State<SalesDepositScreen> {
                                       children: [
                                         const Text('Sisa Piutang', style: TextStyle(fontSize: 11, color: Colors.orange, fontWeight: FontWeight.bold)),
                                         const SizedBox(height: 4),
-                                        Text(CurrencyFormatter.format(dummyPiutang), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.orange)),
+                                        Text(CurrencyFormatter.format(piutang), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.orange)),
                                       ],
                                     ),
                                   ),
                                   const SizedBox(height: 16),
                                   
                                   // Action Buttons
-                                  SizedBox(
-                                    width: double.infinity,
-                                    child: OutlinedButton.icon(
-                                      onPressed: () {
-                                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Fitur Riwayat Transaksi segera hadir')));
-                                      },
-                                      icon: const Icon(Icons.history_rounded, size: 18, color: AppColors.textSecondary),
-                                      label: const Text('Lihat Riwayat Transaksi', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textSecondary)),
-                                      style: OutlinedButton.styleFrom(
-                                        side: BorderSide(color: Colors.grey.shade300),
-                                        padding: const EdgeInsets.symmetric(vertical: 12),
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: OutlinedButton.icon(
+                                          onPressed: () {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) => CustomerInputScreen(customer: c),
+                                              ),
+                                            ).then((_) {
+                                              if (mounted) context.read<CustomerProvider>().fetchCustomers();
+                                            });
+                                          },
+                                          icon: const Icon(Icons.edit_rounded, size: 16, color: AppColors.primary),
+                                          label: const Text('Edit Data', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.primary)),
+                                          style: OutlinedButton.styleFrom(
+                                            side: const BorderSide(color: AppColors.primary),
+                                            padding: const EdgeInsets.symmetric(vertical: 12),
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                          ),
+                                        ),
                                       ),
-                                    ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: ElevatedButton.icon(
+                                          onPressed: () {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) => CustomerTransactionHistoryScreen(customer: c),
+                                              ),
+                                            );
+                                          },
+                                          icon: const Icon(Icons.history_rounded, size: 16, color: Colors.white),
+                                          label: const Text('Riwayat', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white)),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: AppColors.primary,
+                                            padding: const EdgeInsets.symmetric(vertical: 12),
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                            elevation: 0,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),
@@ -321,6 +389,7 @@ class _SalesDepositScreenState extends State<SalesDepositScreen> {
                 ),
               ],
             ),
+          ),
     );
   }
 }

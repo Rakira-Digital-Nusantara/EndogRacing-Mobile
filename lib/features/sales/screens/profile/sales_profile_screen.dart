@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
-import '../../../core/constants/app_colors.dart';
-import '../../../core/utils/currency_formatter.dart';
-import '../../auth/providers/auth_provider.dart';
-import '../utils/sales_notification_dialog.dart';
+import 'package:endog_racing/core/constants/app_colors.dart';
+import 'package:endog_racing/shared/widgets/notification_bell.dart';
+import 'package:endog_racing/core/utils/currency_formatter.dart';
+import 'package:endog_racing/features/auth/providers/auth_provider.dart';
+import 'package:endog_racing/features/sales/providers/sales_provider.dart';
+import 'package:endog_racing/features/sales/utils/sales_notification_dialog.dart';
 
 class SalesProfileScreen extends StatelessWidget {
   const SalesProfileScreen({super.key});
@@ -14,7 +16,15 @@ class SalesProfileScreen extends StatelessWidget {
     final auth = context.watch<AuthProvider>();
     final user = auth.user;
     final userFoto = user?.foto;
-    final salesName = user?.usrLoginname ?? 'Sales Officer';
+    final salesProvider = context.watch<SalesProvider>();
+    final profile = salesProvider.salesProfile;
+
+    // Use profile data from API if available, fallback to auth user or default
+    final salesName = profile?['name']?.toString() ?? user?.usrLoginname ?? 'Sales Officer';
+    final roleName = profile?['role']?.toString() ?? 'Petugas Sales';
+    final statusAkun = profile?['status']?.toString() ?? 'Aktif';
+    final penjualanBulanIni = double.tryParse(profile?['penjualan_bulan_ini']?.toString() ?? '0') ?? 0.0;
+    final totalTransaksi = profile?['total_transaksi']?.toString() ?? '0';
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -57,19 +67,38 @@ class SalesProfileScreen extends StatelessWidget {
           ],
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_none, color: Color(0xFF475569)),
-            onPressed: () {
-              SalesNotificationDialog.show(context);
-            },
-          ),
+          const NotificationBell(),
           Container(
             margin: const EdgeInsets.only(right: 20, left: 4),
-            child: CircleAvatar(
-              radius: 16,
-              backgroundImage: (userFoto != null && userFoto.isNotEmpty) 
-                ? NetworkImage(userFoto) 
-                : const NetworkImage('https://i.pravatar.cc/150?img=33'),
+            child: Container(
+              width: 32.0,
+              height: 32.0,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color(0xFFE2E8F0),
+                    Color(0xFFCBD5E1),
+                  ],
+                ),
+                border: Border.all(color: Colors.white, width: 2),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Center(
+                child: Icon(
+                  Icons.delivery_dining_rounded, 
+                  color: const Color(0xFF64748B), 
+                  size: 19.2,
+                ),
+              ),
             ),
           ),
         ],
@@ -117,7 +146,7 @@ class SalesProfileScreen extends StatelessWidget {
                         children: [
                           Icon(Icons.check_circle_outline, size: 14, color: Colors.green.shade600),
                           const SizedBox(width: 4),
-                          Text('Aktif', style: TextStyle(fontSize: 12, color: Colors.green.shade700, fontWeight: FontWeight.bold)),
+                          Text(statusAkun, style: TextStyle(fontSize: 12, color: Colors.green.shade700, fontWeight: FontWeight.bold)),
                         ],
                       ),
                     ),
@@ -128,24 +157,37 @@ class SalesProfileScreen extends StatelessWidget {
                       // Avatar
                       Stack(
                         children: [
-                          CircleAvatar(
-                            radius: 40,
-                            backgroundImage: (userFoto != null && userFoto.isNotEmpty) 
-                              ? NetworkImage(userFoto) 
-                              : const NetworkImage('https://i.pravatar.cc/150?img=33'),
-                          ),
-                          Positioned(
-                            bottom: 0,
-                            right: 0,
-                            child: Container(
-                              padding: const EdgeInsets.all(4),
-                              decoration: const BoxDecoration(
-                                color: AppColors.primary,
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(Icons.edit, size: 12, color: Colors.white),
-                            ),
-                          )
+                          Container(
+              width: 80.0,
+              height: 80.0,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color(0xFFE2E8F0),
+                    Color(0xFFCBD5E1),
+                  ],
+                ),
+                border: Border.all(color: Colors.white, width: 2),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Center(
+                child: Icon(
+                  Icons.delivery_dining_rounded, 
+                  color: const Color(0xFF64748B), 
+                  size: 48.0,
+                ),
+              ),
+            ),
+                          // Removed edit icon position per requirement
                         ],
                       ),
                       const SizedBox(height: 16),
@@ -155,7 +197,7 @@ class SalesProfileScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Petugas Sales',
+                        roleName,
                         style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
                       ),
                     ],
@@ -189,7 +231,7 @@ class SalesProfileScreen extends StatelessWidget {
                       children: [
                         const Text('Penjualan Bulan Ini', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
                         const SizedBox(height: 8),
-                        Text(CurrencyFormatter.format(45200000), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.primary)),
+                        Text(CurrencyFormatter.format(penjualanBulanIni), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.primary)),
                       ],
                     ),
                   ),
@@ -215,7 +257,7 @@ class SalesProfileScreen extends StatelessWidget {
                       children: [
                         const Text('Total Transaksi', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
                         const SizedBox(height: 8),
-                        const Text('128', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.primary)),
+                        Text(totalTransaksi, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.primary)),
                       ],
                     ),
                   ),
@@ -258,15 +300,6 @@ class SalesProfileScreen extends StatelessWidget {
                     },
                   ),
 
-                  _buildDivider(),
-                  _buildListTile(
-                    icon: Icons.help_outline,
-                    title: 'Faq & Bantuan',
-                    subtitle: 'Pusat bantuan',
-                    onTap: () {
-                      context.push('/sales/faq-bantuan');
-                    },
-                  ),
                   _buildDivider(),
                   _buildListTile(
                     icon: Icons.logout,

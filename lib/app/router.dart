@@ -1,10 +1,9 @@
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-
 import '../../features/auth/providers/auth_provider.dart';
 import '../../features/auth/screens/login_kandang_screen.dart';
 import '../../features/auth/screens/login_sales_screen.dart';
 import '../../features/auth/screens/role_selection_screen.dart';
-import '../../features/home/screens/home_screen.dart';
 import '../../features/home/screens/main_screen.dart';
 import '../../features/splash/screens/splash_screen.dart';
 import '../../features/absensi/absensi_screen.dart' as absensi_screen;
@@ -14,14 +13,14 @@ import '../../features/input/screens/input_kematian_screen.dart';
 import '../../features/input/screens/input_ovk_screen.dart';
 import '../../features/input/screens/checklist_kebersihan_screen.dart';
 import '../../features/sales/screens/main_sales_screen.dart';
-import '../../features/sales/screens/input_penjualan_screen.dart';
-import '../../features/sales/screens/penarikan_barang_screen.dart';
-import '../../features/sales/screens/retur_barang_screen.dart';
-import '../../features/sales/screens/sales_stok_history_screen.dart';
-import '../../features/sales/screens/rekap_penjualan_screen.dart';
-import '../../features/sales/screens/riwayat_setoran_screen.dart';
-import '../../features/sales/screens/faq_bantuan_screen.dart';
-
+import '../../features/sales/screens/transactions/input_penjualan_screen.dart';
+import '../../features/sales/screens/inventory/penarikan_barang_screen.dart';
+import '../../features/sales/screens/inventory/retur_barang_screen.dart';
+import '../../features/sales/screens/inventory/lapor_pecah_mobil_screen.dart';
+import '../../features/sales/screens/inventory/sales_stok_history_screen.dart';
+import '../../features/sales/screens/transactions/rekap_penjualan_screen.dart';
+import '../../features/sales/screens/cash/riwayat_setoran_screen.dart';
+import '../../features/kandang/screens/kandang_activity_screen.dart';
 /// Konfigurasi routing (navigasi) aplikasi menggunakan GoRouter.
 ///
 /// GoRouter adalah cara modern untuk mengatur perpindahan halaman
@@ -31,20 +30,20 @@ import '../../features/sales/screens/faq_bantuan_screen.dart';
 ///
 /// Contoh: Jika user belum login → tampilkan LoginScreen.
 ///         Jika user sudah login → tampilkan HomeScreen.
-
 /// Membuat instance GoRouter.
 ///
 /// [authProvider] digunakan untuk menentukan apakah user
 /// perlu diarahkan ke halaman login atau langsung ke home.
+final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
+
 GoRouter createRouter(AuthProvider authProvider) {
   return GoRouter(
+    navigatorKey: rootNavigatorKey,
     // Halaman default saat app pertama kali dibuka (Mulai dari Splash)
     initialLocation: '/',
-
     // Listener: setiap kali status login berubah, GoRouter
     // akan mengecek ulang apakah perlu redirect.
     refreshListenable: authProvider,
-
     // Redirect logic dihidupkan kembali
     redirect: (context, state) {
       final bool isLoggedIn = authProvider.isLoggedIn;
@@ -52,15 +51,12 @@ GoRouter createRouter(AuthProvider authProvider) {
       
       // Halaman yang berkaitan dengan login
       final bool isAuthPage = loc == '/role-selection' || loc == '/login-kandang' || loc == '/login-sales';
-
       // Biarkan splash screen berjalan tanpa diinterupsi
       if (loc == '/') return null;
-
       // Jika belum login dan mencoba masuk ke halaman selain login -> tendang ke role selection
       if (!isLoggedIn && !isAuthPage) {
         return '/role-selection';
       }
-
       // Jika sudah login dan mencoba masuk ke halaman login -> arahkan ke home yang sesuai
       if (isLoggedIn && isAuthPage) {
         if (authProvider.user != null) {
@@ -74,7 +70,6 @@ GoRouter createRouter(AuthProvider authProvider) {
       
       return null; // Tidak ada pengalihan, lanjutkan rute normal
     },
-
     // Daftar semua halaman (route) di aplikasi
     routes: [
       GoRoute(
@@ -123,6 +118,11 @@ GoRouter createRouter(AuthProvider authProvider) {
         builder: (context, state) => const ReturBarangScreen(),
       ),
       GoRoute(
+        path: '/sales/lapor-pecah',
+        name: 'sales-lapor-pecah',
+        builder: (context, state) => const LaporPecahMobilScreen(),
+      ),
+      GoRoute(
         path: '/sales/stok-history',
         name: 'sales-stok-history',
         builder: (context, state) => const SalesStokHistoryScreen(),
@@ -139,9 +139,9 @@ GoRouter createRouter(AuthProvider authProvider) {
       ),
 
       GoRoute(
-        path: '/sales/faq-bantuan',
-        name: 'sales-faq-bantuan',
-        builder: (context, state) => const FaqBantuanScreen(),
+        path: '/kandang/activity',
+        name: 'kandang-activity',
+        builder: (context, state) => const KandangActivityScreen(),
       ),
       GoRoute(
         path: '/home',
@@ -152,8 +152,10 @@ GoRouter createRouter(AuthProvider authProvider) {
         path: '/absensi',
         name: 'absensi',
         builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          final type = extra?['type'] as String? ?? 'masuk';
           // Import dilakukan di atas secara otomatis atau manual
-          return const absensi_screen.AbsensiScreen();
+          return absensi_screen.AbsensiScreen(type: type);
         },
       ),
       GoRoute(

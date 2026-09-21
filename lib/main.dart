@@ -12,64 +12,96 @@ import 'features/auth/providers/auth_provider.dart';
 import 'features/update/providers/update_provider.dart';
 import 'features/home/providers/dashboard_provider.dart';
 import 'features/sales/providers/sales_provider.dart';
+import 'features/customers/providers/customer_provider.dart';
+import 'features/notifications/providers/notification_provider.dart';
+
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import 'features/kandang/data/repositories/kandang_repository.dart';
 import 'features/absensi/data/repositories/absensi_repository.dart';
 import 'features/absensi/providers/absensi_provider.dart';
 
-/// Entry point (titik awal) aplikasi.
-///
-/// File ini bertanggung jawab untuk:
-/// 1. Memuat file .env (konfigurasi environment).
-/// 2. Membuat instance DioClient (HTTP client).
-/// 3. Mendaftarkan semua Provider (State Management).
-/// 4. Menjalankan aplikasi.
-///
-/// Perhatikan bahwa file ini TIDAK berisi logika UI apapun.
-/// Semua UI ada di folder features/ dan app/.
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp();
+  debugPrint("Handling a background message: ${message.messageId}");
+
+  String? title = message.notification?.title ?? message.data['title'] ?? 'Notifikasi Baru';
+  String? body = message.notification?.body ?? message.data['body'] ?? message.data['message'] ?? 'Anda memiliki pesan baru';
+
+  int notificationId = message.hashCode.abs();
+  if (notificationId > 2147483647) notificationId = notificationId % 2147483647;
+
+  final FlutterLocalNotificationsPlugin localNotificationsPlugin = FlutterLocalNotificationsPlugin();
+  
+  const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
+  const iosInit = DarwinInitializationSettings();
+  const initSettings = InitializationSettings(android: androidInit, iOS: iosInit);
+  await localNotificationsPlugin.initialize(settings: initSettings);
+
+  const channel = AndroidNotificationChannel(
+    'high_importance_channel_v2',
+    'High Importance Notifications',
+    description: 'This channel is used for important notifications.',
+    importance: Importance.max,
+  );
+  
+  await localNotificationsPlugin
+      .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+      ?.createNotificationChannel(channel);
+
+  localNotificationsPlugin.show(
+    id: notificationId,
+    title: title,
+    body: body,
+    notificationDetails: NotificationDetails(
+      android: AndroidNotificationDetails(
+        channel.id,
+        channel.name,
+        channelDescription: channel.description,
+        importance: Importance.max,
+        priority: Priority.high,
+      ),
+      iOS: const DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+      ),
+    ),
+  );
+}
+
 void main() async {
-  // Pastikan binding Flutter sudah siap sebelum menjalankan kode async
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Inisialisasi locale bahasa Indonesia untuk format tanggal (intl)
   await initializeDateFormatting('id_ID', null);
 
-  // Muat file .env (berisi API_URL, dll)
   await dotenv.load(fileName: '.env');
 
-  // Buat instance DioClient (HTTP client utama)
+  await Firebase.initializeApp();
+
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
   final dioClient = DioClient();
 
-  // Buat instance repository dan utility
   final authRepository = AuthRepository(dioClient);
   final kandangRepository = KandangRepository(dioClient);
   final absensiRepository = AbsensiRepository(dioClient);
   final versionChecker = VersionChecker(dioClient);
 
-  // Buat instance provider
   final authProvider = AuthProvider(authRepository);
   final updateProvider = UpdateProvider(versionChecker);
   final absensiProvider = AbsensiProvider(absensiRepository);
   final dashboardProvider = DashboardProvider(dioClient);
   final salesProvider = SalesProvider(dioClient);
+  final customerProvider = CustomerProvider(dioClient);
+  final notificationProvider = NotificationProvider(dioClient);
 
-  // --- DIMATIKAN SEMENTARA UNTUK TEST UI ---
-  // Cek status login saat app dibuka (apakah masih punya token valid?)
-  // await authProvider.checkLoginStatus();
-
-  // Cek apakah ada update dari server
-  // await updateProvider.checkForUpdate();
-
-  // Buat router (membutuhkan authProvider untuk redirect logic)
   final router = createRouter(authProvider);
 
-  // Jalankan aplikasi!
   runApp(
-    /// MultiProvider mendaftarkan semua Provider agar bisa
-    /// diakses dari widget manapun di bawahnya.
-    ///
-    /// Analoginya seperti "gudang data global" yang bisa
-    /// diakses oleh semua halaman.
     MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: authProvider),
@@ -77,6 +109,8 @@ void main() async {
         ChangeNotifierProvider.value(value: absensiProvider),
         ChangeNotifierProvider.value(value: dashboardProvider),
         ChangeNotifierProvider.value(value: salesProvider),
+        ChangeNotifierProvider.value(value: customerProvider),
+        ChangeNotifierProvider.value(value: notificationProvider),
         Provider.value(value: kandangRepository),
       ],
       child: App(router: router),

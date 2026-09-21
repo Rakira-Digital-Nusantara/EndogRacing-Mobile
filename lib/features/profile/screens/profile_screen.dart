@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../auth/providers/auth_provider.dart';
+import 'package:endog_racing/shared/widgets/notification_bell.dart';
+import '../../kandang/screens/kandang_activity_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -57,17 +59,18 @@ class ProfileScreen extends StatelessWidget {
           ],
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_none, color: Color(0xFF475569)),
-            onPressed: () {},
-          ),
+          const NotificationBell(),
           Container(
             margin: const EdgeInsets.only(right: 20, left: 4),
             child: CircleAvatar(
               radius: 16,
+              backgroundColor: AppColors.primary.withOpacity(0.1),
               backgroundImage: (userFoto != null && userFoto.isNotEmpty) 
                 ? NetworkImage(userFoto) 
-                : const NetworkImage('https://i.pravatar.cc/150?img=33'),
+                : null,
+              child: (userFoto == null || userFoto.isEmpty)
+                  ? const Icon(Icons.warehouse_rounded, size: 20, color: AppColors.primary)
+                  : null,
             ),
           ),
         ],
@@ -126,27 +129,15 @@ class ProfileScreen extends StatelessWidget {
                   Column(
                     children: [
                       // Avatar
-                      Stack(
-                        children: [
-                          CircleAvatar(
-                            radius: 40,
-                            backgroundImage: (userFoto != null && userFoto.isNotEmpty) 
-                              ? NetworkImage(userFoto) 
-                              : const NetworkImage('https://i.pravatar.cc/150?img=33'),
-                          ),
-                          Positioned(
-                            bottom: 0,
-                            right: 0,
-                            child: Container(
-                              padding: const EdgeInsets.all(4),
-                              decoration: const BoxDecoration(
-                                color: AppColors.primary,
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(Icons.edit, size: 12, color: Colors.white),
-                            ),
-                          )
-                        ],
+                      CircleAvatar(
+                        radius: 40,
+                        backgroundColor: AppColors.primary.withOpacity(0.1),
+                        backgroundImage: (userFoto != null && userFoto.isNotEmpty) 
+                          ? NetworkImage(userFoto) 
+                          : null,
+                        child: (userFoto == null || userFoto.isEmpty)
+                            ? const Icon(Icons.warehouse_rounded, size: 40, color: AppColors.primary)
+                            : null,
                       ),
                       const SizedBox(height: 16),
                       Text(
@@ -202,11 +193,19 @@ class ProfileScreen extends StatelessWidget {
               child: Column(
                 children: [
 
+
                   _buildListTile(
-                    icon: Icons.help_outline,
-                    title: 'Faq & Bantuan',
-                    subtitle: 'Pusat bantuan',
-                    onTap: () {},
+                    icon: Icons.history_rounded,
+                    title: 'Riwayat Aktivitas Harian',
+                    subtitle: 'Lihat daftar aktivitas kandang',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const KandangActivityScreen(),
+                        ),
+                      );
+                    },
                   ),
                   _buildDivider(),
                   _buildListTile(

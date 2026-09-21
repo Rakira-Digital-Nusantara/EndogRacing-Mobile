@@ -29,6 +29,16 @@ class _InputKematianScreenState extends State<InputKematianScreen> {
   bool _isLoadingForm = false;
   String _formError = '';
 
+  bool get _isLainnyaSelected {
+    if (_selectedPenyakitCode == null) return false;
+    final selectedItem = _penyakitList.firstWhere(
+      (p) => p['penyakit_code']?.toString() == _selectedPenyakitCode,
+      orElse: () => <String, dynamic>{},
+    );
+    final nama = selectedItem['penyakit_nama']?.toString().toLowerCase() ?? '';
+    return nama == 'lainnya' || _selectedPenyakitCode?.toLowerCase() == 'lainnya';
+  }
+
   @override
   void initState() {
     super.initState();
@@ -90,20 +100,31 @@ class _InputKematianScreenState extends State<InputKematianScreen> {
       return;
     }
 
+    if (_kategori == 'Mati' && _isLainnyaSelected && _penyebabController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Isi penyebab kematian lainnya!')));
+      return;
+    }
+
     setState(() => _isLoading = true);
 
     try {
       final payload = {
         "kdg_code": kandang.kdgCode,
-        "gudang_code": "GDG-001",
+        "gudang_code": "GDG0001",
         "tanggal": DateTime.now().toIso8601String().split('T')[0],
         "details": [
           {
-            "sku_product": _kategori == 'Afkir' ? "PRD-008" : "PRD-007",
+            "sku_product": _kategori == 'Afkir' ? "990001" : "990002",
             "kategori": _kategori,
             "qty_ekor": _jumlahAyam,
-            "penyakit_code": _kategori == 'Mati' ? _selectedPenyakitCode : null,
-            "penyebab": _kategori == 'Mati' ? _selectedPenyakitCode : "",
+            "penyakit_code": _kategori == 'Mati' 
+                ? (_isLainnyaSelected ? "" : _selectedPenyakitCode) 
+                : null,
+            "penyebab": _kategori == 'Mati' 
+                ? (_isLainnyaSelected ? null : _selectedPenyakitCode) 
+                : null,
+            if (_kategori == 'Mati' && _isLainnyaSelected)
+              "penyebab_lainnya": _penyebabController.text,
             "catatan": "",
           },
         ],
@@ -476,9 +497,26 @@ class _InputKematianScreenState extends State<InputKematianScreen> {
                                   onChanged: (val) {
                                     setState(() {
                                       _selectedPenyakitCode = val;
+                                      if (!_isLainnyaSelected) {
+                                        _penyebabController.clear();
+                                      }
                                     });
                                   },
                                 ),
+                          if (_isLainnyaSelected) ...[
+                            const SizedBox(height: 16),
+                            const Text('Sebutkan Penyebab Lainnya', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+                            const SizedBox(height: 8),
+                            TextFormField(
+                              controller: _penyebabController,
+                              decoration: InputDecoration(
+                                filled: true,
+                                fillColor: const Color(0xFFF1F5F9),
+                                hintText: 'Contoh: Terjepit, dll',
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                              ),
+                            ),
+                          ],
                         ],
                       ],
                     ),

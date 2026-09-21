@@ -52,7 +52,7 @@ class _LoginSalesScreenState extends State<LoginSalesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
+
 
     return Container(
       decoration: const BoxDecoration(

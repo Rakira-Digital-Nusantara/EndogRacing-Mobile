@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../../core/constants/app_colors.dart';
+import 'package:provider/provider.dart';
+import 'package:endog_racing/core/constants/app_colors.dart';
+import 'package:endog_racing/features/sales/providers/sales_provider.dart';
+import 'package:intl/intl.dart';
 
 class SalesStokHistoryScreen extends StatefulWidget {
   const SalesStokHistoryScreen({super.key});
@@ -11,65 +14,35 @@ class SalesStokHistoryScreen extends StatefulWidget {
 class _SalesStokHistoryScreenState extends State<SalesStokHistoryScreen> {
   DateTimeRange? _selectedDateRange;
 
-  // Dummy Data for History (Now with actual DateTime for filtering)
-  final List<Map<String, dynamic>> _allHistoryData = [
-    {
-      'title': 'Ambil Gudang', 
-      'subtitle': 'Pusat', 
-      'amount': '+50', 
-      'unit': 'Kg', 
-      'isPositive': true,
-      'date': DateTime.now()
-    },
-    {
-      'title': 'Retur Telur', 
-      'subtitle': 'Pecah', 
-      'amount': '-2', 
-      'unit': 'Kg', 
-      'isPositive': false,
-      'date': DateTime.now().subtract(const Duration(hours: 3))
-    },
-    {
-      'title': 'Ambil Gudang', 
-      'subtitle': 'Pusat', 
-      'amount': '+45', 
-      'unit': 'Kg', 
-      'isPositive': true,
-      'date': DateTime.now().subtract(const Duration(days: 1))
-    },
-    {
-      'title': 'Retur Telur', 
-      'subtitle': 'Sisa Stok', 
-      'amount': '-5', 
-      'unit': 'Kg', 
-      'isPositive': false,
-      'date': DateTime.now().subtract(const Duration(days: 1, hours: 2))
-    },
-    {
-      'title': 'Ambil Gudang', 
-      'subtitle': 'Pusat', 
-      'amount': '+60', 
-      'unit': 'Kg', 
-      'isPositive': true,
-      'date': DateTime.now().subtract(const Duration(days: 2))
-    },
-  ];
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _fetchData();
+    });
+  }
+
+  void _fetchData() {
+    String? startStr;
+    String? endStr;
+    if (_selectedDateRange != null) {
+      final formatter = DateFormat('yyyy-MM-dd');
+      startStr = formatter.format(_selectedDateRange!.start);
+      endStr = formatter.format(_selectedDateRange!.end);
+    }
+    context.read<SalesProvider>().fetchRiwayatStokMobil(tanggalAwal: startStr, tanggalAkhir: endStr);
+  }
 
   @override
   Widget build(BuildContext context) {
-    // Filter logic
-    List<Map<String, dynamic>> filteredHistory = _allHistoryData;
-    if (_selectedDateRange != null) {
-      filteredHistory = _allHistoryData.where((h) {
-        final date = h['date'] as DateTime;
-        return date.isAfter(_selectedDateRange!.start.subtract(const Duration(days: 1))) && 
-               date.isBefore(_selectedDateRange!.end.add(const Duration(days: 1)));
-      }).toList();
-    }
+    final sales = context.watch<SalesProvider>();
+    List<Map<String, dynamic>> filteredHistory = sales.riwayatStokMobil;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
+        actions: [
+        ],
         title: const Text('Semua Riwayat Stok', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
         backgroundColor: Colors.white,
         foregroundColor: AppColors.textPrimary,
@@ -138,6 +111,7 @@ class _SalesStokHistoryScreenState extends State<SalesStokHistoryScreen> {
                         setState(() {
                           _selectedDateRange = picked;
                         });
+                        _fetchData();
                       }
                     },
                   ),
@@ -149,6 +123,7 @@ class _SalesStokHistoryScreenState extends State<SalesStokHistoryScreen> {
                       setState(() {
                         _selectedDateRange = null;
                       });
+                      _fetchData();
                     },
                     child: Container(
                       padding: const EdgeInsets.all(8),
@@ -166,7 +141,9 @@ class _SalesStokHistoryScreenState extends State<SalesStokHistoryScreen> {
           
           // Result List
           Expanded(
-            child: filteredHistory.isEmpty 
+            child: sales.isLoading 
+              ? const Center(child: CircularProgressIndicator())
+              : filteredHistory.isEmpty 
               ? Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -182,18 +159,28 @@ class _SalesStokHistoryScreenState extends State<SalesStokHistoryScreen> {
                   itemCount: filteredHistory.length,
                   itemBuilder: (context, index) {
                     final item = filteredHistory[index];
-                    // Format output time
-                    final dt = item['date'] as DateTime;
-                    final timeStr = '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
-                    final isToday = dt.day == DateTime.now().day && dt.month == DateTime.now().month;
-                    final subtitleFormatted = '${item['subtitle']}, ${isToday ? 'Hari ini' : '${dt.day}/${dt.month}/${dt.year}'} $timeStr';
+                    final isPositive = (item['arah']?.toString().toUpperCase() == 'IN');
+                    final labelPerubahan = item['label_perubahan']?.toString() ?? '0';
+                    
+                    String amountStr = labelPerubahan;
+                    String unitStr = '';
+                    final parts = labelPerubahan.split(' ');
+                    if (parts.length > 1) {
+                      amountStr = parts[0];
+                      unitStr = parts.sublist(1).join(' ');
+                    }
+
+                    String title = item['jenis_transaksi']?.toString() ?? 'Transaksi';
+                    if (title.toLowerCase() == 'retur') {
+                      title = isPositive ? 'Terima Retur' : 'Kirim Retur';
+                    }
 
                     return _buildHistoryItem(
-                      title: item['title'],
-                      subtitle: subtitleFormatted,
-                      amount: item['amount'],
-                      unit: item['unit'],
-                      isPositive: item['isPositive'],
+                      title: title,
+                      subtitle: '${item['sku_name'] ?? ''}, ${item['waktu_format'] ?? item['tanggal']}',
+                      amount: amountStr,
+                      unit: unitStr,
+                      isPositive: isPositive,
                     );
                   },
                 ),

@@ -21,10 +21,11 @@ class _InputProduksiScreenState extends State<InputProduksiScreen> {
   String _formError = '';
   bool _isSubmitting = false;
 
-  String _skuUtuh = 'PRD-005';
-  String _skuRusak = 'PRD-006';
+  String _skuUtuh = '1500123';
+  String _skuRusak = '100001';
 
   int _populasi = 0;
+  String _gudangCode = 'GDG0001';
 
   // Tab State
   int _selectedTabIndex = 0; // 0 = Utuh, 1 = Rusak
@@ -63,6 +64,9 @@ class _InputProduksiScreenState extends State<InputProduksiScreen> {
                 _populasi = int.tryParse(innerData['populasi_ayam_saat_ini'].toString()) ?? 0;
               });
             }
+            if (innerData.containsKey('gudang_code')) {
+              _gudangCode = innerData['gudang_code']?.toString() ?? 'GDG0001';
+            }
             if (innerData.containsKey('items')) {
               // Extract SKU automatically based on name
               final List items = innerData['items'];
@@ -77,18 +81,18 @@ class _InputProduksiScreenState extends State<InputProduksiScreen> {
               }
               // If we couldn't find them, default to the first two, or log them
               if (_skuUtuh.isEmpty && items.isNotEmpty) {
-                _skuUtuh = items[0]['sku_product']?.toString() ?? 'PRD-005';
+                _skuUtuh = items[0]['sku_product']?.toString() ?? '1500123';
               } else if (_skuUtuh.isEmpty) {
-                _skuUtuh = 'PRD-005';
+                _skuUtuh = '1500123';
               }
               if (_skuRusak.isEmpty && items.length > 1) {
-                _skuRusak = items[1]['sku_product']?.toString() ?? 'PRD-006';
+                _skuRusak = items[1]['sku_product']?.toString() ?? '100001';
               } else if (_skuRusak.isEmpty) {
-                _skuRusak = 'PRD-006';
+                _skuRusak = '100001';
               }
             } else {
-               _skuUtuh = 'PRD-005';
-               _skuRusak = 'PRD-006';
+               _skuUtuh = '1500123';
+               _skuRusak = '100001';
                print("API TIDAK MENGEMBALIKAN ITEMS: $innerData");
             }
           }
@@ -139,7 +143,7 @@ class _InputProduksiScreenState extends State<InputProduksiScreen> {
 
     final payload = {
       "kdg_code": kandangCode,
-      "gudang_code": "GDG-001",
+      "gudang_code": _gudangCode,
       "tanggal": DateTime.now().toIso8601String().split('T')[0],
       "details": details,
     };

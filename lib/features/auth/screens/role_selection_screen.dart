@@ -1,17 +1,12 @@
-import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-
+import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
-import '../../../shared/widgets/app_button.dart';
-
 /// Halaman pertama yang muncul (Entry Point).
 /// Memaksa pengguna memilih peran sebelum login.
 class RoleSelectionScreen extends StatelessWidget {
   const RoleSelectionScreen({super.key});
-
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
       body: Container(
@@ -67,7 +62,6 @@ class RoleSelectionScreen extends StatelessWidget {
                       ),
                     ),
                   ),
-
                       // --- Bagian Bawah: Panel Pemilihan Akses ---
                       Container(
                         width: double.infinity,
@@ -139,7 +133,6 @@ class RoleSelectionScreen extends StatelessWidget {
         ),
     );
   }
-
   Widget _buildRoleCard({
     required BuildContext context,
     required String title,
@@ -224,3 +217,4 @@ class RoleSelectionScreen extends StatelessWidget {
     );
   }
 }
+

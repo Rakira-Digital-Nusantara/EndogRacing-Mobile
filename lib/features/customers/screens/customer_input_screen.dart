@@ -1,17 +1,31 @@
 import 'package:flutter/material.dart';
-import '../../../core/constants/app_colors.dart';
+import 'package:provider/provider.dart';
+import 'package:endog_racing/features/sales/providers/sales_provider.dart';
+import 'package:endog_racing/features/customers/providers/customer_provider.dart';
+import 'package:endog_racing/core/constants/app_colors.dart';
 
-class SalesCustomerInputScreen extends StatefulWidget {
-  const SalesCustomerInputScreen({super.key});
+class CustomerInputScreen extends StatefulWidget {
+  final Map<String, dynamic>? customer;
+  const CustomerInputScreen({super.key, this.customer});
 
   @override
-  State<SalesCustomerInputScreen> createState() => _SalesCustomerInputScreenState();
+  State<CustomerInputScreen> createState() => _CustomerInputScreenState();
 }
 
-class _SalesCustomerInputScreenState extends State<SalesCustomerInputScreen> {
+class _CustomerInputScreenState extends State<CustomerInputScreen> {
   final _nameCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
   final _addressCtrl = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.customer != null) {
+      _nameCtrl.text = widget.customer!['customer_name']?.toString() ?? widget.customer!['name']?.toString() ?? '';
+      _addressCtrl.text = widget.customer!['address']?.toString() ?? widget.customer!['alamat']?.toString() ?? '';
+      _phoneCtrl.text = widget.customer!['phone']?.toString() ?? widget.customer!['no_hp']?.toString() ?? '';
+    }
+  }
 
   @override
   void dispose() {
@@ -21,7 +35,7 @@ class _SalesCustomerInputScreenState extends State<SalesCustomerInputScreen> {
     super.dispose();
   }
 
-  void _simpanCustomer() {
+  void _simpanCustomer() async {
     if (_nameCtrl.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -39,32 +53,67 @@ class _SalesCustomerInputScreenState extends State<SalesCustomerInputScreen> {
       );
       return;
     }
+    final isEditMode = widget.customer != null;
+    bool success = false;
+    String errorMsg = '';
     
-    // TODO: Implement real integration with backend API
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.check_circle_rounded, color: Colors.white),
-            const SizedBox(width: 8),
-            Text('Berhasil menambahkan ${_nameCtrl.text}! (Dummy)'),
-          ],
+    if (isEditMode) {
+      final payload = {
+        "customer_name": _nameCtrl.text.trim(),
+        "phone": _phoneCtrl.text.trim(),
+        "address": _addressCtrl.text.trim(),
+      };
+      final provider = context.read<CustomerProvider>();
+      final code = widget.customer!['customer_code']?.toString() ?? widget.customer!['code']?.toString() ?? '';
+      success = await provider.updateCustomer(code, payload);
+      errorMsg = provider.error;
+    } else {
+      final payload = {
+        "name": _nameCtrl.text.trim(),
+        "no_hp": _phoneCtrl.text.trim(),
+        "alamat": _addressCtrl.text.trim(),
+      };
+      final provider = context.read<SalesProvider>();
+      success = await provider.submitCustomer(payload);
+      errorMsg = provider.error;
+    }
+
+    if (!mounted) return;
+
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.check_circle_rounded, color: Colors.white),
+              const SizedBox(width: 8),
+              Text(isEditMode ? 'Data berhasil diperbarui!' : 'Berhasil menambahkan ${_nameCtrl.text}!'),
+            ],
+          ),
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        )
+      );
+      Navigator.pop(context);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(errorMsg.isNotEmpty ? errorMsg : 'Gagal memproses data'),
+          backgroundColor: Colors.red,
         ),
-        backgroundColor: Colors.green,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      )
-    );
-    Navigator.pop(context); // Kembali ke list customer
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final isEditMode = widget.customer != null;
+    
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text('Tambah Pelanggan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+        title: Text(isEditMode ? 'Edit Customer' : 'Tambah Customer Baru', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         elevation: 0,
@@ -198,12 +247,12 @@ class _SalesCustomerInputScreenState extends State<SalesCustomerInputScreen> {
                 elevation: 4,
                 shadowColor: AppColors.primary.withOpacity(0.4),
               ),
-              child: const Row(
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.save_rounded, size: 20),
-                  SizedBox(width: 8),
-                  Text('Simpan Data Pelanggan', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  const Icon(Icons.save_rounded, size: 20),
+                  const SizedBox(width: 8),
+                  Text(isEditMode ? 'Simpan Perubahan' : 'Simpan Customer', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 ],
               ),
             ),

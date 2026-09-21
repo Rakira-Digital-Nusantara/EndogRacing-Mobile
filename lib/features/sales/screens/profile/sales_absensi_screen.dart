@@ -2,13 +2,13 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
-import 'package:go_router/go_router.dart';
+
 import 'package:intl/intl.dart';
-import '../../../core/constants/app_colors.dart';
-import '../../../shared/widgets/success_screen.dart';
-import '../../absensi/selfie_camera_screen.dart';
-import '../../absensi/providers/absensi_provider.dart';
-import '../../auth/providers/auth_provider.dart';
+import 'package:endog_racing/core/constants/app_colors.dart';
+import 'package:endog_racing/shared/widgets/success_screen.dart';
+import 'package:endog_racing/features/absensi/selfie_camera_screen.dart';
+import 'package:endog_racing/features/absensi/providers/absensi_provider.dart';
+import 'package:endog_racing/features/auth/providers/auth_provider.dart';
 
 class SalesAbsensiScreen extends StatefulWidget {
   final String type; // dipertahankan untuk backward compatibility
@@ -29,7 +29,9 @@ class _SalesAbsensiScreenState extends State<SalesAbsensiScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<AbsensiProvider>().fetchHistory();
+      final provider = context.read<AbsensiProvider>();
+      provider.setRole(true);
+      provider.fetchHistory();
       _checkLocation();
     });
   }
@@ -77,6 +79,30 @@ class _SalesAbsensiScreenState extends State<SalesAbsensiScreen> {
         desiredAccuracy: LocationAccuracy.high,
       );
       
+      if (position.isMocked) {
+        if (mounted) {
+          setState(() {
+            _locationMessage = "Fake GPS terdeteksi!";
+            _isCheckingLocation = false;
+            _currentPosition = null; // Disable button
+          });
+          showDialog(
+            context: context,
+            builder: (_) => AlertDialog(
+              title: const Text('Peringatan Keamanan'),
+              content: const Text('Anda terdeteksi menggunakan aplikasi Fake GPS. Harap matikan Fake GPS untuk melakukan absensi.'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Mengerti'),
+                ),
+              ],
+            ),
+          );
+        }
+        return;
+      }
+      
       if (mounted) {
         setState(() {
           _currentPosition = position;
@@ -102,6 +128,8 @@ class _SalesAbsensiScreenState extends State<SalesAbsensiScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF6FAF7),
       appBar: AppBar(
+        actions: [
+        ],
         title: const Text('Absensi Sales', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
         backgroundColor: Colors.white,
         foregroundColor: AppColors.primaryDark,
@@ -322,7 +350,9 @@ class _SalesAbsensiScreenState extends State<SalesAbsensiScreen> {
 
   Widget _buildSubmitButton(AbsensiProvider provider) {
     final bool canSubmit = _currentPosition != null && _photoPath != null && !provider.isLoading;
-    final String nextType = provider.nextAbsenType; // "Masuk" atau "Pulang"
+    final String nextType = widget.type.isNotEmpty 
+        ? widget.type[0].toUpperCase() + widget.type.substring(1).toLowerCase() 
+        : 'Masuk';
     
     final Color btnColor = nextType == 'Masuk' ? AppColors.primary : Colors.orange.shade800;
     final IconData btnIcon = nextType == 'Masuk' ? Icons.login : Icons.logout;
@@ -331,6 +361,7 @@ class _SalesAbsensiScreenState extends State<SalesAbsensiScreen> {
       onPressed: canSubmit
           ? () async {
               final success = await provider.submitAbsensi(
+                forcedTipeAbsen: nextType,
                 photoPath: _photoPath!,
                 latitude: _currentPosition!.latitude,
                 longitude: _currentPosition!.longitude,

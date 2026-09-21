@@ -20,13 +20,15 @@ class AbsensiProvider extends ChangeNotifier {
   bool get isSudahAbsenMasukHariIni {
     final now = DateTime.now();
     final todayStr = "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
-    return _history.any((e) => e.tanggalAbsen.startsWith(todayStr) && e.tipeAbsen.toLowerCase() == 'masuk');
+    final todayStrReversed = "${now.day.toString().padLeft(2, '0')}-${now.month.toString().padLeft(2, '0')}-${now.year}";
+    return _history.any((e) => (e.tanggalAbsen.startsWith(todayStr) || e.tanggalAbsen.startsWith(todayStrReversed)) && e.tipeAbsen.trim().toLowerCase() == 'masuk');
   }
 
   bool get isSudahAbsenPulangHariIni {
     final now = DateTime.now();
     final todayStr = "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
-    return _history.any((e) => e.tanggalAbsen.startsWith(todayStr) && e.tipeAbsen.toLowerCase() == 'pulang');
+    final todayStrReversed = "${now.day.toString().padLeft(2, '0')}-${now.month.toString().padLeft(2, '0')}-${now.year}";
+    return _history.any((e) => (e.tanggalAbsen.startsWith(todayStr) || e.tanggalAbsen.startsWith(todayStrReversed)) && e.tipeAbsen.trim().toLowerCase() == 'pulang');
   }
 
   Future<void> checkHistoryHariIni() async {
@@ -45,22 +47,29 @@ class AbsensiProvider extends ChangeNotifier {
     // Cari absen hari ini
     final now = DateTime.now();
     final todayStr = "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
+    final todayStrReversed = "${now.day.toString().padLeft(2, '0')}-${now.month.toString().padLeft(2, '0')}-${now.year}";
     
     final historyToday = _history.where((element) {
       if (element.tanggalAbsen.isEmpty) return false;
-      return element.tanggalAbsen.startsWith(todayStr);
+      return element.tanggalAbsen.startsWith(todayStr) || element.tanggalAbsen.startsWith(todayStrReversed);
     }).toList();
 
     if (historyToday.isEmpty) return 'Masuk';
     
     // Jika ada Masuk tapi belum ada Pulang
-    bool hasMasuk = historyToday.any((e) => e.tipeAbsen.toLowerCase() == 'masuk');
-    bool hasPulang = historyToday.any((e) => e.tipeAbsen.toLowerCase() == 'pulang');
+    bool hasMasuk = historyToday.any((e) => e.tipeAbsen.trim().toLowerCase() == 'masuk');
+    bool hasPulang = historyToday.any((e) => e.tipeAbsen.trim().toLowerCase() == 'pulang');
 
     if (hasMasuk && !hasPulang) return 'Pulang';
     
     // Default kembali ke Masuk (misal besoknya)
     return 'Masuk';
+  }
+
+  bool _isSales = false;
+
+  void setRole(bool isSales) {
+    _isSales = isSales;
   }
 
   Future<void> fetchHistory() async {
@@ -69,7 +78,7 @@ class AbsensiProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      _history = await _repository.getAbsensiHistory();
+      _history = await _repository.getAbsensiHistory(isSales: _isSales);
     } on DioException catch (e) {
       _errorMessage = _parseError(e);
     } catch (e) {
@@ -84,18 +93,20 @@ class AbsensiProvider extends ChangeNotifier {
     required String photoPath,
     required double latitude,
     required double longitude,
+    String? forcedTipeAbsen,
   }) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
-      final tipe = nextAbsenType;
+      final tipe = forcedTipeAbsen ?? nextAbsenType;
       await _repository.submitAbsensi(
         tipeAbsen: tipe,
         photoPath: photoPath,
         latitude: latitude,
         longitude: longitude,
+        isSales: _isSales,
       );
       
       // Refresh history setelah sukses

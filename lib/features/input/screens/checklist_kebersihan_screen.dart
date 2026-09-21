@@ -76,12 +76,12 @@ class _ChecklistKebersihanScreenState extends State<ChecklistKebersihanScreen> {
 
   int get _completedCount => _checklists.where((item) => item['isChecked'] == true).length;
 
-  Future<void> _takePhoto(int index) async {
+  Future<void> _takePhoto(int index, ImageSource source) async {
     final item = _checklists[index];
     final ImagePicker picker = ImagePicker();
     try {
       final XFile? photo = await picker.pickImage(
-        source: ImageSource.camera,
+        source: source,
         imageQuality: 70,
       );
 
@@ -160,6 +160,37 @@ class _ChecklistKebersihanScreenState extends State<ChecklistKebersihanScreen> {
       _checklists[index]['isChecked'] = false;
       _checklists[index]['photoPath'] = null;
     });
+  }
+
+  void _showImageSourceActionSheet(int index) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => SafeArea(
+        child: Wrap(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt),
+              title: const Text('Ambil dari Kamera'),
+              onTap: () {
+                Navigator.pop(context);
+                _takePhoto(index, ImageSource.camera);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Pilih dari Galeri'),
+              onTap: () {
+                Navigator.pop(context);
+                _takePhoto(index, ImageSource.gallery);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
 
@@ -369,7 +400,7 @@ class _ChecklistKebersihanScreenState extends State<ChecklistKebersihanScreen> {
                           SizedBox(
                             width: double.infinity,
                             child: OutlinedButton.icon(
-                              onPressed: () => _takePhoto(index),
+                              onPressed: () => _showImageSourceActionSheet(index),
                               icon: const Icon(Icons.camera_alt_outlined, size: 20),
                               label: const Text('Ambil Bukti Foto (Wajib)'),
                               style: OutlinedButton.styleFrom(

@@ -47,7 +47,7 @@ class _InputPakanScreenState extends State<InputPakanScreen> {
     });
 
     try {
-      final response = await DioClient().dio.get('/pemakaian-pakan/form?gudang_code=GDG-001');
+      final response = await DioClient().dio.get('/pemakaian-pakan/form?gudang_code=GDG0001');
       if (response.statusCode == 200) {
         final data = response.data['data'] ?? response.data;
         if (data is Map && data.containsKey('items')) {
@@ -93,7 +93,7 @@ class _InputPakanScreenState extends State<InputPakanScreen> {
       }
 
       final payload = {
-        "gudang_code": "GDG-001",
+        "gudang_code": "GDG0001",
         "kdg_code": kandang.kdgCode,
         "tanggal": DateTime.now().toIso8601String().split('T')[0],
         "details": details,
@@ -126,20 +126,29 @@ class _InputPakanScreenState extends State<InputPakanScreen> {
     } on DioException catch (e) {
       if (!mounted) return;
       setState(() => _isSubmitting = false);
-      
       String errorMessage = 'Terjadi kesalahan koneksi';
       if (e.response != null && e.response?.data != null) {
         final data = e.response?.data;
-        if (data is Map && data.containsKey('message')) {
-          errorMessage = data['message'];
+        if (data is Map) {
+          if (data.containsKey('message')) {
+            errorMessage = data['message'].toString();
+          } else {
+            errorMessage = 'Gagal menyimpan data';
+          }
           if (data.containsKey('errors')) {
-            errorMessage += '\n' + data['errors'].toString();
+            if (data['errors'] is Map) {
+              final errorValues = (data['errors'] as Map).values;
+              errorMessage += '\n' + errorValues.map((v) => v is List ? v.join('\n') : v.toString()).join('\n');
+            } else {
+              errorMessage += '\n' + data['errors'].toString();
+            }
           }
         } else {
-          errorMessage = 'Error ${e.response?.statusCode}: ${e.response?.statusMessage}';
+          errorMessage = 'Backend Response:\n${data.toString()}';
         }
+      } else {
+        errorMessage = 'Error ${e.response?.statusCode}: ${e.response?.statusMessage}';
       }
-
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(errorMessage),

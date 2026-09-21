@@ -1,50 +1,43 @@
-import 'dart:io';
 import 'package:dio/dio.dart';
+import '../../../shared/widgets/app_button.dart';
+import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:intl/intl.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/network/dio_client.dart';
 import '../../../shared/widgets/success_screen.dart';
-import '../../../shared/widgets/app_button.dart';
-
+import 'package:endog_racing/shared/widgets/notification_bell.dart';
+import '../../home/screens/main_screen.dart';
 class InventoryScreen extends StatefulWidget {
   const InventoryScreen({super.key});
-
   @override
   State<InventoryScreen> createState() => _InventoryScreenState();
 }
-
 class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   bool _isLoadingPO = false;
   List<dynamic> _pendingPOs = [];
-
   // Form states
   String? _selectedPoCode;
   final List<Map<String, dynamic>> _receiptItems = [];
   List<dynamic> _masterProducts = [];
   bool _isLoadingProducts = false;
   final TextEditingController _penerimaNameController = TextEditingController();
+  final TextEditingController _noSuratJalanController = TextEditingController();
   File? _fotoSuratJalan;
   final ImagePicker _picker = ImagePicker();
   bool _isSubmitting = false;
-
   // History states
   bool _showForm = false;
   bool _isLoadingHistory = false;
   List<dynamic> _historyList = [];
   String _historyError = '';
-
   // Stock states
   bool _isLoadingStock = false;
   List<dynamic> _stockList = [];
   String _stockError = '';
-
   @override
   void initState() {
     super.initState();
@@ -63,7 +56,6 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
     // Fetch initial stock
     _fetchStock();
   }
-
   Future<void> _fetchStock() async {
     if (_isLoadingStock) return;
     setState(() {
@@ -90,7 +82,6 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
       if (mounted) setState(() => _isLoadingStock = false);
     }
   }
-
   Future<void> _fetchHistory() async {
     if (_isLoadingHistory) return;
     setState(() {
@@ -134,7 +125,6 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
       if (mounted) setState(() => _isLoadingHistory = false);
     }
   }
-
   Future<void> _fetchMasterProducts() async {
     if (_isLoadingProducts) return;
     setState(() => _isLoadingProducts = true);
@@ -151,7 +141,6 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
       if (mounted) setState(() => _isLoadingProducts = false);
     }
   }
-
   Future<void> _fetchPendingPOs() async {
     if (_isLoadingPO) return;
     setState(() => _isLoadingPO = true);
@@ -165,11 +154,9 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
         // Kita tidak perlu lagi mem-filter secara lokal.
         
         // Backend has been fixed to include details.product (eager loading)
-
         setState(() {
           _pendingPOs = poList;
         });
-
       }
     } catch (e) {
       // Dummy fallback based on user request
@@ -200,22 +187,20 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
       }
     }
   }
-
   @override
   void dispose() {
     _tabController.dispose();
     _penerimaNameController.dispose();
+    _noSuratJalanController.dispose();
     for (var item in _receiptItems) {
       (item['controller'] as TextEditingController).dispose();
     }
     super.dispose();
   }
-
   @override
   Widget build(BuildContext context) {
     final kandangName = context.watch<AuthProvider>().kandang?.kdgNama ?? 'KANDANG';
     final userFoto = context.watch<AuthProvider>().user?.foto;
-
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
@@ -257,17 +242,33 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
           ],
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_none, color: Color(0xFF475569)),
-            onPressed: () {},
-          ),
-          Container(
-            margin: const EdgeInsets.only(right: 20, left: 4),
-            child: CircleAvatar(
-              radius: 16,
-              backgroundImage: (userFoto != null && userFoto.isNotEmpty) 
-                ? NetworkImage(userFoto) 
-                : const NetworkImage('https://i.pravatar.cc/150?img=33'),
+          const NotificationBell(),
+          GestureDetector(
+            onTap: () {
+              final mainScreen = context.findAncestorStateOfType<MainScreenState>();
+              if (mainScreen != null) {
+                mainScreen.changeTab(3);
+              }
+            },
+            child: Container(
+              margin: const EdgeInsets.only(right: 20, left: 4),
+              child: Container(
+                width: 32.0,
+                height: 32.0,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                ),
+                child: CircleAvatar(
+                  radius: 16,
+                  backgroundColor: AppColors.primary.withOpacity(0.1),
+                  backgroundImage: (userFoto != null && userFoto.isNotEmpty) 
+                    ? NetworkImage(userFoto) 
+                    : null,
+                  child: (userFoto == null || userFoto.isEmpty)
+                      ? const Icon(Icons.warehouse_rounded, size: 20, color: AppColors.primary)
+                      : null,
+                ),
+              ),
             ),
           ),
         ],
@@ -293,7 +294,6 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
       ),
     );
   }
-
   // ===========================================================================
   // TAB 1: STOK TERSEDIA
   // ===========================================================================
@@ -334,7 +334,6 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
         ),
       );
     }
-
     // Grouping Logic
     final Map<String, List<dynamic>> groupedStocks = {
       'Pakan': [],
@@ -342,7 +341,6 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
       'Telur': [],
       'Lainnya': [],
     };
-
     for (var item in _stockList) {
       final String name = (item['sku_name'] ?? item['sku_product'] ?? '-').toLowerCase();
       if (name.contains('pakan') || name.contains('mash') || name.contains('konsentrat')) {
@@ -355,10 +353,8 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
         groupedStocks['Lainnya']!.add(item);
       }
     }
-
     // Remove empty groups
     groupedStocks.removeWhere((key, value) => value.isEmpty);
-
     return RefreshIndicator(
       onRefresh: _fetchStock,
       color: AppColors.primary,
@@ -368,7 +364,6 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
         itemBuilder: (context, index) {
           final category = groupedStocks.keys.elementAt(index);
           final items = groupedStocks[category]!;
-
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -406,7 +401,6 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
                   icon = Icons.egg_outlined;
                   color = const Color(0xFFF59E0B); // Kuning/Oranye
                 }
-
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 12),
                   child: Column(
@@ -435,7 +429,6 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
       ),
     );
   }
-
   Widget _buildStockCard({
     required String name,
     required double quantity,
@@ -452,7 +445,6 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
     } else if (percentage < 0.5) {
       progressColor = const Color(0xFFF59E0B); // Kuning (Menipis)
     }
-
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -522,7 +514,6 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
       ),
     );
   }
-
   // ===========================================================================
   // ===========================================================================
   // TAB 2: PENERIMAAN
@@ -531,12 +522,10 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
     if (_showForm) return _buildPenerimaanFormView();
     return _buildHistoryView();
   }
-
   Widget _buildHistoryView() {
     if (_isLoadingHistory) {
       return const Center(child: CircularProgressIndicator(color: AppColors.primary));
     }
-
     return Padding(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -596,7 +585,7 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
                   final poObj = item['po'] ?? item['purchase_order'] ?? {};
                   
                   final String poStatusPenerimaan = poObj['status_penerimaan']?.toString() ?? poObj['status']?.toString() ?? '';
-                  final String poStatusApproval = poObj['status_approval']?.toString() ?? '';
+
                   final String itemStatus = item['status_penerimaan']?.toString() ?? item['status']?.toString() ?? item['rec_status']?.toString() ?? '';
                   
                   final String rawStatus = itemStatus.isNotEmpty && itemStatus.toLowerCase() != 'a' && itemStatus.toLowerCase() != 'n' ? itemStatus : (poStatusPenerimaan.isNotEmpty ? poStatusPenerimaan : '0');
@@ -614,8 +603,6 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
                   } else {
                     isDraft = true; // By default if not explicitly finished, it's pending (Orange)
                   }
-
-                  final List<dynamic> details = item['details'] ?? [];
 
                   return Container(
                     margin: const EdgeInsets.only(bottom: 16),
@@ -721,7 +708,6 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
       ),
     );
   }
-
   Widget _buildDetailRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0),
@@ -736,7 +722,6 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
       ),
     );
   }
-
   void _showDetailBottomSheet(BuildContext context, Map<String, dynamic> item, {bool isDraft = false}) {
     final String poH = item['po_h'] ?? '-';
     final String terimaCode = item['terima_code'] ?? '-';
@@ -745,9 +730,7 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
     final String penerima = item['penerima_name'] ?? '-';
     // ignore: unused_local_variable
     final String? foto = item['foto_surat_jalan']; // Can be rendered later if backend provides full URL
-
     final List<dynamic> details = item['details'] ?? [];
-
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -800,7 +783,9 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
                               builder: (context) => Dialog(
                                 child: InteractiveViewer(
                                   child: Image.network(
-                                    foto.startsWith('http') ? foto : 'https://api-endogracing.rakiradigital.com/${foto.startsWith('/') ? foto.substring(1) : foto}',
+                                    foto.startsWith('http') 
+                                        ? foto 
+                                        : 'https://api-endogracing.rakiradigital.com/${foto.startsWith('storage/') ? '' : 'storage/'}${foto.startsWith('/') ? foto.substring(1) : foto}',
                                     fit: BoxFit.contain,
                                   ),
                                 ),
@@ -818,7 +803,9 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(8),
                               child: Image.network(
-                                foto.startsWith('http') ? foto : 'https://api-endogracing.rakiradigital.com/${foto.startsWith('/') ? foto.substring(1) : foto}',
+                                foto.startsWith('http') 
+                                    ? foto 
+                                    : 'https://api-endogracing.rakiradigital.com/${foto.startsWith('storage/') ? '' : 'storage/'}${foto.startsWith('/') ? foto.substring(1) : foto}',
                                 fit: BoxFit.cover,
                                 errorBuilder: (context, error, stackTrace) => Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
@@ -908,12 +895,10 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
       },
     );
   }
-
   Widget _buildPenerimaanFormView() {
     if (_isLoadingPO) {
       return const Center(child: CircularProgressIndicator(color: AppColors.primary));
     }
-
     if (_pendingPOs.isEmpty) {
       return Center(
         child: Column(
@@ -932,15 +917,11 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
         ),
       );
     }
-
     // Get selected PO object
     final selectedPoObj = _pendingPOs.firstWhere(
       (p) => p['po_h'] == _selectedPoCode,
       orElse: () => {},
     );
-
-    // Get items from selected PO
-    final List<dynamic> items = selectedPoObj['details'] ?? [];
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
@@ -1012,6 +993,20 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
                   }
                 });
               },
+            ),
+            
+            const SizedBox(height: 16),
+            
+            // 1b. Nomor Surat Jalan
+            const Text('Nomor Surat Jalan', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF475569))),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _noSuratJalanController,
+              decoration: InputDecoration(
+                hintText: 'Contoh: SJ-2026-09-001',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              ),
             ),
             
             const SizedBox(height: 16),
@@ -1115,7 +1110,6 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
                   ),
                 ],
               ),
-
             const SizedBox(height: 16),
             
             // 5. Nama Penerima
@@ -1170,9 +1164,7 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
                       ),
               ),
             ),
-
             const SizedBox(height: 32),
-
             // Submit Button
             AppButton(
               onPressed: _submitPenerimaan,
@@ -1185,7 +1177,6 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
       ),
     );
   }
-
   Future<void> _submitPenerimaan() async {
     // Validasi Basic
     if (_selectedPoCode == null || _penerimaNameController.text.isEmpty || _fotoSuratJalan == null) {
@@ -1210,9 +1201,7 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
       );
       return;
     }
-
     setState(() => _isSubmitting = true);
-
     try {
       // Get the selected PO object
       final selectedPoObj = _pendingPOs.firstWhere((p) => p['po_h'] == _selectedPoCode, orElse: () => {});
@@ -1223,7 +1212,7 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
         'gudang_code': gudangCode,
         'tanggal_terima': DateTime.now().toIso8601String().split('T')[0],
         'penerima_name': _penerimaNameController.text,
-        'no_surat_jalan': '-', // API might not strictly need it, but we give a default
+        'no_surat_jalan': _noSuratJalanController.text.isNotEmpty ? _noSuratJalanController.text : '-',
         'foto_surat_jalan': await MultipartFile.fromFile(
           _fotoSuratJalan!.path,
           filename: _fotoSuratJalan!.path.split('/').last,
@@ -1238,15 +1227,11 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
         formDataMap['details[$i][sku_product]'] = sku;
         formDataMap['details[$i][qty_terima]'] = qtyTerima;
       }
-
       final formData = FormData.fromMap(formDataMap);
       final response = await DioClient().dio.post('/penerimaan-barang', data: formData);
-
       if (!mounted) return;
       setState(() => _isSubmitting = false);
-
       if (response.statusCode == 200 || response.statusCode == 201) {
-
         // Reset form & view
         setState(() {
           _selectedPoCode = null;
@@ -1258,11 +1243,9 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
           _fotoSuratJalan = null;
           _showForm = false;
         });
-
         // Refresh Lists
         _fetchPendingPOs();
         _fetchHistory();
-
         showDialog(
           context: context,
           builder: (context) => SuccessDialog(
@@ -1289,7 +1272,6 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
         try {
           File('d:/_Kerjaan/_EndogRacing/EndogRacingMobile/debug_error.json').writeAsStringSync(e.response?.data.toString() ?? '');
         } catch (_) {}
-
         final data = e.response?.data;
         if (data is Map) {
           if (data.containsKey('errors') && data['errors'] is Map) {
@@ -1316,3 +1298,4 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
     }
   }
 }
+

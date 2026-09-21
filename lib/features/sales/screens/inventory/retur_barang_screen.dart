@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../../core/constants/app_colors.dart';
+import 'package:provider/provider.dart';
+import 'package:endog_racing/core/constants/app_colors.dart';
+import 'package:endog_racing/features/sales/providers/sales_provider.dart';
 
 class ReturBarangScreen extends StatefulWidget {
   const ReturBarangScreen({super.key});
@@ -11,39 +13,55 @@ class ReturBarangScreen extends StatefulWidget {
 class _ReturBarangScreenState extends State<ReturBarangScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  final List<String> _gudang = ['GDG-001 - Gudang Pusat'];
-  final List<String> _alasan = [
-    'Sisa Penjualan Harian',
-    'Telur Pecah di Perjalanan',
-    'Telur Rusak / Afkir',
-    'Lainnya'
-  ];
-  final List<Map<String, dynamic>> _products = [
-    {'sku': 'TLR-001', 'name': 'Telur Utuh', 'stok_mobil': 120},
-    {'sku': 'TLR-002', 'name': 'Telur Bentes', 'stok_mobil': 5},
-  ];
-
-  String? _selectedGudang;
   String? _selectedProduct;
   String? _selectedAlasan;
-  double _qty = 0;
+  double _qtyKas = 0;
+  double _qtyKg = 0;
   bool _isLoading = false;
 
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<SalesProvider>().fetchReturForm();
+    });
+  }
+
   void _submit() async {
-    if (_selectedGudang == null || _selectedProduct == null || _selectedAlasan == null || _qty <= 0) return;
+    final sales = context.read<SalesProvider>();
+    if (_selectedProduct == null || _selectedAlasan == null || (_qtyKas <= 0 && _qtyKg <= 0)) return;
     
     setState(() => _isLoading = true);
-    await Future.delayed(const Duration(seconds: 2));
+
+    final gudangTujuan = sales.returGudangTujuan?['gudang_code']?.toString() ?? 
+                         sales.returGudangTujuan?['kode_gudang']?.toString() ?? 
+                         'GDG0001';
+
+    final payload = {
+      'tanggal': DateTime.now().toIso8601String().split('T')[0],
+      'gudang_tujuan': gudangTujuan,
+      'details': [
+        {
+          'sku_product': _selectedProduct,
+          'qty_kas': _qtyKas % 1 == 0 ? _qtyKas.toInt() : _qtyKas,
+          'qty_kg': _qtyKg % 1 == 0 ? _qtyKg.toInt() : _qtyKg,
+          'alasan': _selectedAlasan,
+        }
+      ]
+    };
+
+    final success = await sales.submitRetur(payload);
+
     setState(() => _isLoading = false);
 
-    if (mounted) {
+    if (success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Row(
-            children: const [
+          content: const Row(
+            children: [
               Icon(Icons.check_circle_rounded, color: Colors.white),
               SizedBox(width: 8),
-              Text('Retur telur ke gudang berhasil! (Dummy)'),
+              Text('Retur barang berhasil!'),
             ],
           ),
           backgroundColor: Colors.green,
@@ -52,21 +70,35 @@ class _ReturBarangScreenState extends State<ReturBarangScreen> {
         )
       );
       Navigator.pop(context);
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(sales.error),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        )
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final sales = context.watch<SalesProvider>();
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
+        actions: [
+        ],
         title: const Text('Refund / Retur', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-        backgroundColor: Colors.red.shade600,
+        backgroundColor: Colors.red.shade700,
         foregroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
       ),
-      body: Form(
+      body: sales.isLoading && sales.returProdukList.isEmpty
+          ? const Center(child: CircularProgressIndicator())
+          : Form(
         key: _formKey,
         child: SizedBox.expand(
           child: Stack(
@@ -104,12 +136,12 @@ class _ReturBarangScreenState extends State<ReturBarangScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Form Retur Telur',
+                            'Form Retur Produk',
                             style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
                           ),
                           SizedBox(height: 4),
                           Text(
-                            'Kembalikan telur sisa/pecah ke gudang',
+                            'Kembalikan barang sisa/pecah ke gudang',
                             style: TextStyle(fontSize: 13, color: Colors.white70),
                           ),
                         ],
@@ -140,24 +172,31 @@ class _ReturBarangScreenState extends State<ReturBarangScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildInputLabel('Gudang Tujuan', true),
-                        DropdownButtonFormField<String>(
-                          decoration: _buildInputDecoration('Pilih Gudang', Icons.warehouse_rounded),
-                          value: _selectedGudang,
-                          items: _gudang.map((g) => DropdownMenuItem<String>(value: g, child: Text(g, style: const TextStyle(fontSize: 14)))).toList(),
-                          onChanged: (v) => setState(() => _selectedGudang = v),
-                          icon: Icon(Icons.keyboard_arrow_down_rounded, color: Colors.red.shade500),
+                        _buildInputLabel('Gudang Tujuan', false),
+                        TextFormField(
+                          initialValue: sales.returGudangTujuan?['gudang_nama']?.toString() ?? 'Gudang Pusat',
+                          readOnly: true,
+                          decoration: _buildInputDecoration('', Icons.warehouse_rounded).copyWith(
+                            fillColor: Colors.grey.shade100,
+                          ),
+                          style: const TextStyle(fontSize: 14, color: AppColors.textPrimary),
                         ),
                         const SizedBox(height: 24),
-                        
-                        _buildInputLabel('Jenis Telur', true),
+
+                        _buildInputLabel('Jenis Produk', true),
                         DropdownButtonFormField<String>(
-                          decoration: _buildInputDecoration('Pilih Telur', Icons.egg_alt_rounded),
+                          isExpanded: true,
+                          decoration: _buildInputDecoration('Pilih Produk', Icons.inventory_2_rounded),
                           value: _selectedProduct,
-                          items: _products.map((p) => DropdownMenuItem<String>(
-                            value: p['sku'], 
-                            child: Text('${p['name']} (Sisa Mobil: ${p['stok_mobil']} Kg)', style: const TextStyle(fontSize: 14)),
-                          )).toList(),
+                          items: sales.returProdukList.map((p) {
+                            final name = p['sku_name']?.toString() ?? '-';
+                            final stok = p['stok_di_mobil']?.toString() ?? '0';
+                            final uom = p['sku_uom']?.toString() ?? 'Kg';
+                            return DropdownMenuItem<String>(
+                              value: p['sku_product']?.toString(), 
+                              child: Text('$name (Sisa Mobil: $stok $uom)', style: const TextStyle(fontSize: 14)),
+                            );
+                          }).toList(),
                           onChanged: (v) => setState(() => _selectedProduct = v),
                           icon: Icon(Icons.keyboard_arrow_down_rounded, color: Colors.red.shade500),
                         ),
@@ -165,20 +204,51 @@ class _ReturBarangScreenState extends State<ReturBarangScreen> {
 
                         _buildInputLabel('Alasan Retur', true),
                         DropdownButtonFormField<String>(
+                          isExpanded: true,
                           decoration: _buildInputDecoration('Pilih Alasan', Icons.feedback_rounded),
                           value: _selectedAlasan,
-                          items: _alasan.map((a) => DropdownMenuItem<String>(value: a, child: Text(a, style: const TextStyle(fontSize: 14)))).toList(),
+                          items: sales.returAlasanList.map((a) => DropdownMenuItem<String>(
+                            value: a, 
+                            child: Text(a, style: const TextStyle(fontSize: 14))
+                          )).toList(),
                           onChanged: (v) => setState(() => _selectedAlasan = v),
                           icon: Icon(Icons.keyboard_arrow_down_rounded, color: Colors.red.shade500),
                         ),
                         const SizedBox(height: 24),
                         
-                        _buildInputLabel('Jumlah diretur (Kg)', true),
-                        TextFormField(
-                          decoration: _buildInputDecoration('0.00', Icons.monitor_weight_rounded),
-                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.red.shade900),
-                          onChanged: (v) => setState(() => _qty = double.tryParse(v) ?? 0),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _buildInputLabel('Jumlah (KAS/Peti)', false),
+                                  TextFormField(
+                                    decoration: _buildInputDecoration('0', Icons.inventory_2_rounded),
+                                    keyboardType: TextInputType.number,
+                                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.red.shade900),
+                                    onChanged: (v) => setState(() => _qtyKas = double.tryParse(v) ?? 0),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _buildInputLabel('Jumlah (KG)', false),
+                                  TextFormField(
+                                    decoration: _buildInputDecoration('0.00', Icons.scale_rounded),
+                                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.red.shade900),
+                                    onChanged: (v) => setState(() => _qtyKg = double.tryParse(v) ?? 0),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -206,7 +276,7 @@ class _ReturBarangScreenState extends State<ReturBarangScreen> {
             width: double.infinity,
             height: 56,
             child: ElevatedButton(
-              onPressed: _selectedGudang != null && _selectedProduct != null && _selectedAlasan != null && _qty > 0 && !_isLoading 
+              onPressed: _selectedProduct != null && _selectedAlasan != null && (_qtyKas > 0 || _qtyKg > 0) && !_isLoading 
                 ? _submit 
                 : null,
               style: ElevatedButton.styleFrom(

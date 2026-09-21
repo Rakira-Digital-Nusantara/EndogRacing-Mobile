@@ -13,11 +13,22 @@ class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
 
   @override
-  State<MainScreen> createState() => _MainScreenState();
+  State<MainScreen> createState() => MainScreenState();
 }
 
-class _MainScreenState extends State<MainScreen> {
+class MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
+
+  void changeTab(int index) {
+    if (index == 0 && _currentIndex != 0) {
+      final authProvider = context.read<AuthProvider>();
+      final kdgCode = authProvider.kandang?.kdgCode ?? '';
+      context.read<DashboardProvider>().fetchDashboardData(kdgCode);
+    }
+    setState(() {
+      _currentIndex = index;
+    });
+  }
 
   // Daftar halaman untuk setiap tab
   final List<Widget> _pages = [
@@ -89,14 +100,7 @@ class _MainScreenState extends State<MainScreen> {
     return Expanded(
       child: GestureDetector(
         onTap: () {
-          if (index == 0 && _currentIndex != 0) {
-            final authProvider = context.read<AuthProvider>();
-            final kdgCode = authProvider.kandang?.kdgCode ?? '';
-            context.read<DashboardProvider>().fetchDashboardData(kdgCode);
-          }
-          setState(() {
-            _currentIndex = index;
-          });
+          changeTab(index);
         },
         behavior: HitTestBehavior.opaque,
         child: AnimatedContainer(

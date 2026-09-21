@@ -4,7 +4,11 @@ import 'package:provider/provider.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../absensi/providers/absensi_provider.dart';
 import '../../auth/providers/auth_provider.dart';
+import 'main_screen.dart';
 import '../providers/dashboard_provider.dart';
+import '../../notifications/providers/notification_provider.dart';
+import '../../notifications/screens/notifications_screen.dart';
+import 'package:endog_racing/shared/widgets/notification_bell.dart';
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -21,9 +25,15 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     // Cek status absen hari ini saat beranda dimuat
     Future.microtask(() {
+      context.read<AbsensiProvider>().setRole(false);
       context.read<AbsensiProvider>().checkHistoryHariIni();
       final kandangCode = context.read<AuthProvider>().kandang?.kdgCode ?? '';
       context.read<DashboardProvider>().fetchDashboardData(kandangCode);
+      
+      // Initialize Firebase Messaging and unread count
+      final notifProvider = context.read<NotificationProvider>();
+      notifProvider.initFirebaseMessaging();
+      notifProvider.fetchUnreadCount();
     });
   }
 
@@ -33,10 +43,11 @@ class _HomeScreenState extends State<HomeScreen> {
     final kandangName = authProvider.kandang?.kdgNama ?? 'Petugas';
     final kandangCode = authProvider.kandang?.kdgCode ?? 'KANDANG';
     final userFoto = authProvider.user?.foto;
+    final unreadCount = context.watch<NotificationProvider>().unreadCount;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC), // Cool off-white
-      appBar: _buildAppBar(kandangName, userFoto),
+      appBar: _buildAppBar(kandangName, userFoto, unreadCount),
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: () async {
@@ -82,7 +93,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  PreferredSizeWidget _buildAppBar(String kandangName, String? userFoto) {
+  PreferredSizeWidget _buildAppBar(String kandangName, String? userFoto, int unreadCount) {
     return AppBar(
       backgroundColor: Colors.white,
       elevation: 0,
@@ -122,17 +133,26 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       actions: [
-        IconButton(
-          icon: const Icon(Icons.notifications_none, color: Color(0xFF475569)),
-          onPressed: () {},
-        ),
-        Container(
-          margin: const EdgeInsets.only(right: 20, left: 4),
-          child: CircleAvatar(
-            radius: 16,
-            backgroundImage: (userFoto != null && userFoto.isNotEmpty) 
-              ? NetworkImage(userFoto) 
-              : const NetworkImage('https://i.pravatar.cc/150?img=33'),
+        const NotificationBell(),
+        GestureDetector(
+          onTap: () {
+            final mainScreen = context.findAncestorStateOfType<MainScreenState>();
+            if (mainScreen != null) {
+              mainScreen.changeTab(3);
+            }
+          },
+          child: Container(
+            margin: const EdgeInsets.only(right: 20, left: 4),
+            child: CircleAvatar(
+              radius: 16,
+              backgroundColor: AppColors.primary.withOpacity(0.1),
+              backgroundImage: (userFoto != null && userFoto.isNotEmpty) 
+                ? NetworkImage(userFoto) 
+                : null,
+              child: (userFoto == null || userFoto.isEmpty)
+                  ? const Icon(Icons.warehouse_rounded, size: 20, color: AppColors.primary)
+                  : null,
+            ),
           ),
         ),
       ],
@@ -223,9 +243,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildInputDataButton(BuildContext context) {
-    final absensiProvider = context.watch<AbsensiProvider>();
-    final bool isMasuk = absensiProvider.isSudahAbsenMasukHariIni;
-    final bool isPulang = absensiProvider.isSudahAbsenPulangHariIni;
+    final dashboardProvider = context.watch<DashboardProvider>();
+    final bool isMasuk = dashboardProvider.isAbsenMasukDone;
+    final bool isPulang = dashboardProvider.isAbsenPulangDone;
     
     String buttonText = 'Absen Masuk Kandang';
     if (isMasuk && !isPulang) {
@@ -239,8 +259,8 @@ class _HomeScreenState extends State<HomeScreen> {
       height: 52,
       child: ElevatedButton.icon(
         onPressed: (isMasuk && isPulang) ? null : () {
-          // Buka layar absensi
-          context.push('/absensi');
+          // Buka layar absensi dengan meneruskan tipe yang sesuai
+          context.push('/absensi', extra: {'type': (isMasuk && !isPulang) ? 'pulang' : 'masuk'});
         },
         icon: Icon(isMasuk && isPulang ? Icons.check_circle : Icons.add_a_photo, size: 20),
         label: Text(
@@ -427,8 +447,9 @@ class _HomeScreenState extends State<HomeScreen> {
             Expanded(
               child: _buildMetrikCard(
                 title: dashboardProvider.filter == 'harian' ? 'TELUR HARI INI' : 'PRODUKSI TELUR',
-                value: dashboardProvider.isLoading ? '...' : dashboardProvider.telurProduksi,
-                unit: 'kg',
+                value: dashboardProvider.isLoading ? '...' : dashboardProvider.telurProduksiKas,
+                unit: 'Kas',
+                subtitle: dashboardProvider.isLoading ? null : dashboardProvider.telurProduksiKg,
                 icon: Icons.egg_outlined,
                 bgColor: const Color(0xFFFFF7ED), // Orange
                 borderColor: const Color(0xFFF97316),
@@ -439,8 +460,9 @@ class _HomeScreenState extends State<HomeScreen> {
             Expanded(
               child: _buildMetrikCard(
                 title: 'TELUR RUSAK',
-                value: dashboardProvider.isLoading ? '...' : dashboardProvider.telurRusak,
-                unit: 'kg',
+                value: dashboardProvider.isLoading ? '...' : dashboardProvider.telurRusakKas,
+                unit: 'Kas',
+                subtitle: dashboardProvider.isLoading ? null : dashboardProvider.telurRusakKg,
                 icon: Icons.egg_alt_outlined, 
                 bgColor: const Color(0xFFFFF7ED), // Orange
                 borderColor: const Color(0xFFF97316),
@@ -489,6 +511,7 @@ class _HomeScreenState extends State<HomeScreen> {
     required Color bgColor,
     Color? borderColor,
     Color? iconColor,
+    String? subtitle,
   }) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -545,6 +568,17 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ],
           ),
+          if (subtitle != null) ...[
+            const SizedBox(height: 4),
+            Text(
+              subtitle,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey.shade500,
+              ),
+            ),
+          ],
         ],
       ),
     );
