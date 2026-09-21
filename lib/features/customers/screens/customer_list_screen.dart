@@ -4,20 +4,20 @@ import 'package:endog_racing/core/constants/app_colors.dart';
 import 'package:endog_racing/core/utils/currency_formatter.dart';
 import 'package:endog_racing/features/customers/screens/customer_transaction_history_screen.dart';
 import 'package:endog_racing/features/customers/screens/customer_input_screen.dart';
-import 'package:endog_racing/core/constants/app_colors.dart';
 import 'package:endog_racing/features/auth/providers/auth_provider.dart';
-import 'package:endog_racing/core/utils/currency_formatter.dart';
-import 'package:endog_racing/features/sales/utils/sales_notification_dialog.dart';
-import 'package:endog_racing/features/customers/screens/customer_input_screen.dart';
 import 'package:endog_racing/features/customers/providers/customer_provider.dart';
+import 'package:endog_racing/shared/widgets/notification_bell.dart';
+
 class CustomerListScreen extends StatefulWidget {
   final VoidCallback? onProfileTap;
   const CustomerListScreen({super.key, this.onProfileTap});
   @override
   State<CustomerListScreen> createState() => _CustomerListScreenState();
 }
+
 class _CustomerListScreenState extends State<CustomerListScreen> {
   String _searchQuery = '';
+  
   @override
   void initState() {
     super.initState();
@@ -25,6 +25,7 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
       context.read<CustomerProvider>().fetchCustomers();
     });
   }
+  
   @override
   Widget build(BuildContext context) {
     final customerProv = context.watch<CustomerProvider>();
@@ -69,7 +70,6 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                     color: Color(0xFF1E293B),
                   ),
                 ),
-
                 const SizedBox(height: 2),
                 Text(
                   'PETUGAS SALES',

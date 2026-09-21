@@ -526,10 +526,12 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
     if (_isLoadingHistory) {
       return const Center(child: CircularProgressIndicator(color: AppColors.primary));
     }
-    return Padding(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return RefreshIndicator(
+      onRefresh: _fetchHistory,
+      color: AppColors.primary,
+      child: ListView(
+        padding: const EdgeInsets.all(20),
+        physics: const AlwaysScrollableScrollPhysics(),
         children: [
           SizedBox(
             child: ElevatedButton.icon(
@@ -550,164 +552,149 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
           const Text('Riwayat Penerimaan', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
           const SizedBox(height: 12),
           if (_historyError.isNotEmpty)
-            Expanded(
-              child: Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Text(_historyError, style: const TextStyle(color: Colors.red), textAlign: TextAlign.center),
-                ),
-              ),
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Text(_historyError, style: const TextStyle(color: Colors.red), textAlign: TextAlign.center),
             )
           else if (_historyList.isEmpty)
-            Expanded(
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.history, size: 64, color: Colors.grey.shade300),
-                    const SizedBox(height: 16),
-                    Text('Belum ada riwayat penerimaan', style: TextStyle(color: Colors.grey.shade500)),
-                  ],
-                ),
+            Padding(
+              padding: const EdgeInsets.only(top: 40),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.history, size: 64, color: Colors.grey.shade300),
+                  const SizedBox(height: 16),
+                  Text('Belum ada riwayat penerimaan', style: TextStyle(color: Colors.grey.shade500)),
+                ],
               ),
             )
           else
-            Expanded(
-              child: RefreshIndicator(
-                onRefresh: _fetchHistory,
-                color: AppColors.primary,
-                child: ListView.builder(
-                  itemCount: _historyList.length,
-                itemBuilder: (context, index) {
-                  final item = _historyList[index];
-                  final String poH = item['po_h'] ?? '-';
-                  final String date = item['tanggal_terima'] ?? '-';
-                  final poObj = item['po'] ?? item['purchase_order'] ?? {};
-                  
-                  final String poStatusPenerimaan = poObj['status_penerimaan']?.toString() ?? poObj['status']?.toString() ?? '';
+            ..._historyList.map((item) {
+              final String poH = item['po_h'] ?? '-';
+              final String date = item['tanggal_terima'] ?? '-';
+              final poObj = item['po'] ?? item['purchase_order'] ?? {};
+              
+              final String poStatusPenerimaan = poObj['status_penerimaan']?.toString() ?? poObj['status']?.toString() ?? '';
 
-                  final String itemStatus = item['status_penerimaan']?.toString() ?? item['status']?.toString() ?? item['rec_status']?.toString() ?? '';
-                  
-                  final String rawStatus = itemStatus.isNotEmpty && itemStatus.toLowerCase() != 'a' && itemStatus.toLowerCase() != 'n' ? itemStatus : (poStatusPenerimaan.isNotEmpty ? poStatusPenerimaan : '0');
-                  
-                  String statusLabel = rawStatus.isEmpty ? 'Menunggu Admin' : rawStatus;
-                  bool isDraft = true;
-                  
-                  final lowerStatus = rawStatus.toLowerCase();
-                  if (lowerStatus.contains('selesai') || rawStatus == '1') {
-                    statusLabel = 'Selesai Diterima';
-                    isDraft = false;
-                  } else if (lowerStatus.contains('draft') || rawStatus == '0' || lowerStatus.contains('pending')) {
-                    statusLabel = 'Draft / Menunggu Konfirmasi';
-                    isDraft = true;
-                  } else {
-                    isDraft = true; // By default if not explicitly finished, it's pending (Orange)
-                  }
+              final String itemStatus = item['status_penerimaan']?.toString() ?? item['status']?.toString() ?? item['rec_status']?.toString() ?? '';
+              
+              final String rawStatus = itemStatus.isNotEmpty && itemStatus.toLowerCase() != 'a' && itemStatus.toLowerCase() != 'n' ? itemStatus : (poStatusPenerimaan.isNotEmpty ? poStatusPenerimaan : '0');
+              
+              String statusLabel = rawStatus.isEmpty ? 'Menunggu Admin' : rawStatus;
+              bool isDraft = true;
+              
+              final lowerStatus = rawStatus.toLowerCase();
+              if (lowerStatus.contains('selesai') || rawStatus == '1') {
+                statusLabel = 'Selesai Diterima';
+                isDraft = false;
+              } else if (lowerStatus.contains('draft') || rawStatus == '0' || lowerStatus.contains('pending')) {
+                statusLabel = 'Draft / Menunggu Konfirmasi';
+                isDraft = true;
+              } else {
+                isDraft = true; // By default if not explicitly finished, it's pending (Orange)
+              }
 
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.03),
-                          blurRadius: 15,
-                          offset: const Offset(0, 5),
-                        )
-                      ],
-                    ),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: () => _showDetailBottomSheet(context, item, isDraft: isDraft),
-                        borderRadius: BorderRadius.circular(20),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              // Icon on the left
-                              Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: isDraft ? Colors.orange.withOpacity(0.15) : const Color(0xFF16A34A).withOpacity(0.15),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(
-                                  isDraft ? Icons.time_to_leave_outlined : Icons.local_shipping_outlined,
-                                  color: isDraft ? Colors.orange : const Color(0xFF16A34A),
-                                  size: 24,
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              // Info in the middle
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      poH,
-                                      style: const TextStyle(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w700,
-                                        color: Color(0xFF1E293B),
-                                        letterSpacing: -0.3,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 6),
-                                    Row(
-                                      children: [
-                                        const Icon(Icons.calendar_month_outlined, size: 14, color: Colors.grey),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          date,
-                                          style: const TextStyle(
-                                            fontSize: 13, 
-                                            color: Colors.grey,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 12),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                          decoration: BoxDecoration(
-                                            color: isDraft ? const Color(0xFFFFFBEB) : const Color(0xFFF0FDF4),
-                                            borderRadius: BorderRadius.circular(6),
-                                            border: Border.all(
-                                              color: isDraft ? Colors.orange.withOpacity(0.2) : const Color(0xFF16A34A).withOpacity(0.2),
-                                            ),
-                                          ),
-                                          child: Text(
-                                            statusLabel,
-                                            style: TextStyle(
-                                              fontSize: 10,
-                                              fontWeight: FontWeight.w700,
-                                              color: isDraft ? const Color(0xFFD97706) : const Color(0xFF16A34A),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              // Chevron right
-                              Icon(Icons.arrow_forward_ios_rounded, color: Colors.grey.shade300, size: 16),
-                            ],
+              return Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.03),
+                      blurRadius: 15,
+                      offset: const Offset(0, 5),
+                    )
+                  ],
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () => _showDetailBottomSheet(context, item, isDraft: isDraft),
+                    borderRadius: BorderRadius.circular(20),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          // Icon on the left
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: isDraft ? Colors.orange.withOpacity(0.15) : const Color(0xFF16A34A).withOpacity(0.15),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              isDraft ? Icons.time_to_leave_outlined : Icons.local_shipping_outlined,
+                              color: isDraft ? Colors.orange : const Color(0xFF16A34A),
+                              size: 24,
+                            ),
                           ),
+                          const SizedBox(width: 16),
+                          // Info in the middle
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  poH,
+                                  style: const TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFF1E293B),
+                                    letterSpacing: -0.3,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Row(
+                                  children: [
+                                    const Icon(Icons.calendar_month_outlined, size: 14, color: Colors.grey),
+                                    const SizedBox(width: 4),
+                                      Text(
+                                        date,
+                                        style: const TextStyle(
+                                          fontSize: 13, 
+                                          color: Colors.grey,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                        decoration: BoxDecoration(
+                                          color: isDraft ? const Color(0xFFFFFBEB) : const Color(0xFFF0FDF4),
+                                          borderRadius: BorderRadius.circular(6),
+                                          border: Border.all(
+                                            color: isDraft ? Colors.orange.withOpacity(0.2) : const Color(0xFF16A34A).withOpacity(0.2),
+                                          ),
+                                        ),
+                                        child: Text(
+                                          statusLabel,
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w700,
+                                            color: isDraft ? const Color(0xFFD97706) : const Color(0xFF16A34A),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                            // Chevron right
+                            Icon(Icons.arrow_forward_ios_rounded, color: Colors.grey.shade300, size: 16),
+                          ],
                         ),
                       ),
                     ),
-                  );
-                },
-              ),
-             ),
-            ),
-        ],
-      ),
-    );
-  }
+                  ),
+                );
+              }).toList(),
+          ],
+        ),
+      );
+    }
   Widget _buildDetailRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0),

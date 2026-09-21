@@ -314,9 +314,10 @@ class SalesProfileScreen extends StatelessWidget {
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
                           child: Padding(
                             padding: const EdgeInsets.all(24.0),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.center,
+                            child: SingleChildScrollView(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
                                 // Concentric Red Icon
                                 Container(
@@ -399,6 +400,7 @@ class SalesProfileScreen extends StatelessWidget {
                                   ],
                                 )
                               ],
+                            ),
                             ),
                           ),
                         ),

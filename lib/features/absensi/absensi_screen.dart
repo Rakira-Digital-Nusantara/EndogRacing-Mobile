@@ -9,7 +9,7 @@ import '../../shared/widgets/success_screen.dart';
 import 'selfie_camera_screen.dart';
 import 'providers/absensi_provider.dart';
 import '../auth/providers/auth_provider.dart';
-import 'data/models/absensi_model.dart';
+import '../../core/services/location_service.dart';
 
 class AbsensiScreen extends StatefulWidget {
   final String type;
@@ -23,6 +23,7 @@ class _AbsensiScreenState extends State<AbsensiScreen> {
   bool _isCheckingLocation = true;
   String? _photoPath;
   Position? _currentPosition;
+  bool _isDalamArea = false;
   String _locationMessage = "Memeriksa lokasi...";
 
   @override
@@ -36,36 +37,56 @@ class _AbsensiScreenState extends State<AbsensiScreen> {
   }
 
   Future<void> _checkLocation() async {
-    // DUMMY BYPASS UNTUK TESTING
     setState(() {
       _isCheckingLocation = true;
       _locationMessage = "Mencari sinyal GPS...";
     });
 
-    await Future.delayed(const Duration(milliseconds: 500)); // Simulasi loading
-
-    if (mounted) {
-      setState(() {
-        // Berikan posisi dummy agar tombol Absen selalu aktif
-        _currentPosition = Position(
-          longitude: 107.0,
-          latitude: -6.0,
-          timestamp: DateTime.now(),
-          accuracy: 1.0,
-          altitude: 1.0,
-          altitudeAccuracy: 1.0,
-          heading: 1.0,
-          headingAccuracy: 1.0,
-          speed: 1.0,
-          speedAccuracy: 1.0,
+    try {
+      final position = await LocationService().getCurrentLocation();
+      final kandang = context.read<AuthProvider>().kandang;
+      
+      bool isDalamArea = false;
+      String message = "";
+      
+      if (kandang == null) {
+        message = "Data kandang tidak ditemukan";
+      } else if (kandang.kdgLatitude == null || kandang.kdgLongitude == null) {
+        // Fallback: Bypass jika koordinat kandang belum diset
+        isDalamArea = true; 
+        message = "Berada di lokasi (Titik koordinat belum diset)";
+      } else {
+        double distance = LocationService().calculateDistanceInMeters(
+          position.latitude, 
+          position.longitude, 
+          kandang.kdgLatitude!, 
+          kandang.kdgLongitude!
         );
-
-        bool isDalamArea = true; // Selalu true untuk testing
-        _locationMessage = isDalamArea
-            ? "Berada di lokasi (Mode Testing)"
-            : "Di luar lokasi";
-        _isCheckingLocation = false;
-      });
+        
+        if (distance <= 50) { // Toleransi radius 50 meter
+          isDalamArea = true;
+          message = "Berada di lokasi (\u00B1${distance.toInt()} meter)";
+        } else {
+          message = "Di luar jangkauan (Jarak: ${distance.toInt()} meter)";
+        }
+      }
+      
+      if (mounted) {
+        setState(() {
+          _currentPosition = position;
+          _isDalamArea = isDalamArea;
+          _locationMessage = message;
+          _isCheckingLocation = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isCheckingLocation = false;
+          _locationMessage = e.toString().replaceAll('Exception: ', '');
+          _isDalamArea = false;
+        });
+      }
     }
   }
 
@@ -343,8 +364,10 @@ class _AbsensiScreenState extends State<AbsensiScreen> {
   }
 
   Widget _buildSubmitButton(AbsensiProvider provider) {
-    final bool canSubmit =
-        _currentPosition != null && _photoPath != null && !provider.isLoading;
+    final bool canSubmit = _currentPosition != null && 
+                           _photoPath != null && 
+                           _isDalamArea && 
+                           !provider.isLoading;
     final String nextType = widget.type.isNotEmpty
         ? widget.type[0].toUpperCase() + widget.type.substring(1).toLowerCase()
         : 'Masuk';

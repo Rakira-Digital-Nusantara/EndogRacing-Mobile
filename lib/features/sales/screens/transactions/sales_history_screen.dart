@@ -196,10 +196,24 @@ class _SalesHistoryScreenState extends State<SalesHistoryScreen> {
         children: [
           sales.isLoading
               ? const Center(child: CircularProgressIndicator())
-              : Column(
-                  children: [
-                // Cash in hand summary card
-                Padding(
+              : RefreshIndicator(
+                  color: AppColors.primary,
+                  onRefresh: () async {
+                    await context.read<SalesProvider>().fetchSalesHistory(
+                      customerCode: widget.initialCustomerCode,
+                    );
+                    if (mounted) {
+                      await context.read<SalesProvider>().fetchSaldoBelumDisetor();
+                    }
+                  },
+                  child: CustomScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    slivers: [
+                      SliverToBoxAdapter(
+                        child: Column(
+                          children: [
+                            // Cash in hand summary card
+                            Padding(
                   padding: const EdgeInsets.only(left: 20, right: 20, top: 16),
                   child: Container(
                     padding: const EdgeInsets.all(20),
@@ -446,38 +460,30 @@ class _SalesHistoryScreenState extends State<SalesHistoryScreen> {
                   ),
                 ),
                 const SizedBox(height: 8),
-
-                // List
-                Expanded(
-                  child: RefreshIndicator(
-                    color: AppColors.primary,
-                    onRefresh: () async {
-                      await context.read<SalesProvider>().fetchSalesHistory(
-                        customerCode: widget.initialCustomerCode,
-                      );
-                      if (mounted)
-                        await context
-                            .read<SalesProvider>()
-                            .fetchSaldoBelumDisetor();
-                    },
-                    child: ListView.builder(
-                      padding: const EdgeInsets.only(
-                        left: 20,
-                        right: 20,
-                        top: 8,
-                        bottom: 180, // Ditambahkan lebih besar agar tidak tertutup 2 FAB
+                          ],
+                        ),
                       ),
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      itemCount: filteredHistory.length,
-                      itemBuilder: (context, index) {
-                        final item = filteredHistory[index];
-                        return _buildTransactionCard(item);
-                      },
-                    ),
+                      // List
+                      SliverPadding(
+                        padding: const EdgeInsets.only(
+                          left: 20,
+                          right: 20,
+                          top: 8,
+                          bottom: 180, // Ditambahkan lebih besar agar tidak tertutup 2 FAB
+                        ),
+                        sliver: SliverList(
+                          delegate: SliverChildBuilderDelegate(
+                            (context, index) {
+                              final item = filteredHistory[index];
+                              return _buildTransactionCard(item);
+                            },
+                            childCount: filteredHistory.length,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
-            ),
           if (_isFabExpanded)
             Positioned.fill(
               child: GestureDetector(

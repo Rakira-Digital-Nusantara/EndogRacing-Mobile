@@ -422,7 +422,9 @@ class _HutangBarangScreenState extends State<HutangBarangScreen> with SingleTick
     return SingleChildScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
       child: Container(
-        height: MediaQuery.of(context).size.height * 0.7,
+        constraints: BoxConstraints(
+          minHeight: MediaQuery.of(context).size.height * 0.7,
+        ),
         alignment: Alignment.center,
         padding: const EdgeInsets.all(32),
         child: Column(
