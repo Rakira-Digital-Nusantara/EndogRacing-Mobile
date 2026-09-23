@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../auth/providers/auth_provider.dart';
 import 'package:endog_racing/shared/widgets/notification_bell.dart';
@@ -51,7 +50,7 @@ class ProfileScreen extends StatelessWidget {
                     fontSize: 10,
                     fontWeight: FontWeight.w800,
                     letterSpacing: 1.2,
-                    color: AppColors.primary.withOpacity(0.8),
+                    color: AppColors.primary.withValues(alpha: 0.8),
                   ),
                 ),
               ],
@@ -64,7 +63,7 @@ class ProfileScreen extends StatelessWidget {
             margin: const EdgeInsets.only(right: 20, left: 4),
             child: CircleAvatar(
               radius: 16,
-              backgroundColor: AppColors.primary.withOpacity(0.1),
+              backgroundColor: AppColors.primary.withValues(alpha: 0.1),
               backgroundImage: (userFoto != null && userFoto.isNotEmpty) 
                 ? NetworkImage(userFoto) 
                 : null,
@@ -96,7 +95,7 @@ class ProfileScreen extends StatelessWidget {
                 border: Border.all(color: Colors.grey.shade200),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.02),
+                    color: Colors.black.withValues(alpha: 0.02),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   )
@@ -112,7 +111,7 @@ class ProfileScreen extends StatelessWidget {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: AppColors.primary.withOpacity(0.1),
+                        color: AppColors.primary.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
@@ -131,7 +130,7 @@ class ProfileScreen extends StatelessWidget {
                       // Avatar
                       CircleAvatar(
                         radius: 40,
-                        backgroundColor: AppColors.primary.withOpacity(0.1),
+                        backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                         backgroundImage: (userFoto != null && userFoto.isNotEmpty) 
                           ? NetworkImage(userFoto) 
                           : null,
@@ -153,7 +152,7 @@ class ProfileScreen extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.08),
+                          color: AppColors.primary.withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Row(
@@ -184,7 +183,7 @@ class ProfileScreen extends StatelessWidget {
                 border: Border.all(color: Colors.grey.shade200),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.02),
+                    color: Colors.black.withValues(alpha: 0.02),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   )
@@ -232,7 +231,7 @@ class ProfileScreen extends StatelessWidget {
                                   height: 100,
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
-                                    color: Colors.red.withOpacity(0.08),
+                                    color: Colors.red.withValues(alpha: 0.08),
                                   ),
                                   child: Center(
                                     child: Container(
@@ -240,7 +239,7 @@ class ProfileScreen extends StatelessWidget {
                                       height: 75,
                                       decoration: BoxDecoration(
                                         shape: BoxShape.circle,
-                                        color: Colors.red.withOpacity(0.15),
+                                        color: Colors.red.withValues(alpha: 0.15),
                                       ),
                                       child: Center(
                                         child: Container(
@@ -366,7 +365,7 @@ class ProfileScreen extends StatelessWidget {
     bool isLogout = false,
   }) {
     final color = isLogout ? Colors.red : const Color(0xFF1E293B);
-    final iconBgColor = isLogout ? Colors.red.shade50 : AppColors.primary.withOpacity(0.1);
+    final iconBgColor = isLogout ? Colors.red.shade50 : AppColors.primary.withValues(alpha: 0.1);
     final iconColor = isLogout ? Colors.red : AppColors.primary;
 
     return Material(

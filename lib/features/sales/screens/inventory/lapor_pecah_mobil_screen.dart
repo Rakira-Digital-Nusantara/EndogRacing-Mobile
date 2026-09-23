@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:endog_racing/core/constants/app_colors.dart';
 import 'package:endog_racing/features/sales/providers/sales_provider.dart';
 import 'package:endog_racing/shared/widgets/success_screen.dart';
 
@@ -91,7 +90,7 @@ class _LaporPecahMobilScreenState extends State<LaporPecahMobilScreen> {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Icon(Icons.egg_rounded, color: Colors.white, size: 28),
@@ -108,7 +107,7 @@ class _LaporPecahMobilScreenState extends State<LaporPecahMobilScreen> {
                           const SizedBox(height: 4),
                           Text(
                             'Catat telur yang pecah/rusak selama di perjalanan.',
-                            style: TextStyle(fontSize: 13, color: Colors.white.withOpacity(0.9), height: 1.3),
+                            style: TextStyle(fontSize: 13, color: Colors.white.withValues(alpha: 0.9), height: 1.3),
                           ),
                         ],
                       ),
@@ -132,7 +131,7 @@ class _LaporPecahMobilScreenState extends State<LaporPecahMobilScreen> {
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.04),
+                            color: Colors.black.withValues(alpha: 0.04),
                             blurRadius: 20,
                             offset: const Offset(0, 10),
                           ),

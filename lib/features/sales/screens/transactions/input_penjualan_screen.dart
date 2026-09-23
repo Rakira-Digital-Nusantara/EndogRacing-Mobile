@@ -208,7 +208,7 @@ class _InputPenjualanScreenState extends State<InputPenjualanScreen> {
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
+                            color: Colors.white.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: const Icon(
@@ -257,7 +257,7 @@ class _InputPenjualanScreenState extends State<InputPenjualanScreen> {
                           borderRadius: BorderRadius.circular(24),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
+                              color: Colors.black.withValues(alpha: 0.05),
                               blurRadius: 20,
                               offset: const Offset(0, 10),
                             ),
@@ -274,7 +274,7 @@ class _InputPenjualanScreenState extends State<InputPenjualanScreen> {
                                 'Pilih Kustomer',
                                 Icons.person_outline_rounded,
                               ),
-                              value: _selectedCustomerCode,
+                              initialValue: _selectedCustomerCode,
                               items: sales.customers.map((c) {
                                 return DropdownMenuItem<String>(
                                   value: c['code'],
@@ -303,7 +303,7 @@ class _InputPenjualanScreenState extends State<InputPenjualanScreen> {
                                 'Pilih Produk',
                                 Icons.egg_alt_rounded,
                               ),
-                              value: _selectedProductSku,
+                              initialValue: _selectedProductSku,
                               items: sales.products.map((p) {
                                 return DropdownMenuItem<String>(
                                   value: p['sku'],
@@ -354,9 +354,9 @@ class _InputPenjualanScreenState extends State<InputPenjualanScreen> {
                                 margin: const EdgeInsets.only(bottom: 24),
                                 padding: const EdgeInsets.all(16),
                                 decoration: BoxDecoration(
-                                  color: AppColors.primary.withOpacity(0.05),
+                                  color: AppColors.primary.withValues(alpha: 0.05),
                                   borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+                                  border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
                                 ),
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -377,7 +377,7 @@ class _InputPenjualanScreenState extends State<InputPenjualanScreen> {
                                 'Pilih Status Pembayaran',
                                 Icons.payment_rounded,
                               ),
-                              value: _paymentMethod,
+                              initialValue: _paymentMethod,
                               items: _paymentMethods.map((m) {
                                 return DropdownMenuItem<String>(
                                   value: m,
@@ -421,7 +421,7 @@ class _InputPenjualanScreenState extends State<InputPenjualanScreen> {
                                   decoration: BoxDecoration(
                                     color: Colors.white,
                                     borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(color: AppColors.border.withOpacity(0.3)),
+                                    border: Border.all(color: AppColors.border.withValues(alpha: 0.3)),
                                   ),
                                   child: Row(
                                     children: [
@@ -476,7 +476,7 @@ class _InputPenjualanScreenState extends State<InputPenjualanScreen> {
                             Container(
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: Colors.orange.withOpacity(0.1),
+                                color: Colors.orange.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Row(
@@ -513,7 +513,7 @@ class _InputPenjualanScreenState extends State<InputPenjualanScreen> {
           color: Colors.white,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, -5),
             ),
@@ -532,7 +532,7 @@ class _InputPenjualanScreenState extends State<InputPenjualanScreen> {
                   borderRadius: BorderRadius.circular(16),
                 ),
                 elevation: 4,
-                shadowColor: AppColors.primary.withOpacity(0.4),
+                shadowColor: AppColors.primary.withValues(alpha: 0.4),
                 disabledBackgroundColor: Colors.grey.shade300,
               ),
               child: sales.isLoading

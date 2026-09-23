@@ -1,6 +1,5 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'dart:io';
 import '../../../core/network/dio_client.dart';
 
 class DashboardProvider extends ChangeNotifier {

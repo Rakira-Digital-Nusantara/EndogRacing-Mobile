@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:endog_racing/core/constants/app_colors.dart';
@@ -64,7 +63,7 @@ class _HutangBarangScreenState extends State<HutangBarangScreen> with SingleTick
                   borderRadius: BorderRadius.circular(28),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.2),
+                      color: Colors.black.withValues(alpha: 0.2),
                       blurRadius: 40,
                       offset: const Offset(0, 15),
                     )
@@ -80,13 +79,13 @@ class _HutangBarangScreenState extends State<HutangBarangScreen> with SingleTick
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         gradient: LinearGradient(
-                          colors: [AppColors.primary, AppColors.primary.withOpacity(0.6)],
+                          colors: [AppColors.primary, AppColors.primary.withValues(alpha: 0.6)],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.primary.withOpacity(0.3),
+                            color: AppColors.primary.withValues(alpha: 0.3),
                             blurRadius: 15,
                             offset: const Offset(0, 8),
                           )
@@ -147,7 +146,7 @@ class _HutangBarangScreenState extends State<HutangBarangScreen> with SingleTick
                               final sales = context.read<SalesProvider>();
                               final success = await sales.submitPenyelesaianHutang(returCode, skuPengganti: "1500123");
                               
-                              if (success && mounted) {
+                              if (success && context.mounted) {
                                 showDialog(
                                   context: context,
                                   barrierDismissible: false,
@@ -161,7 +160,7 @@ class _HutangBarangScreenState extends State<HutangBarangScreen> with SingleTick
                                     },
                                   ),
                                 );
-                              } else if (mounted) {
+                              } else if (context.mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                     content: Text(sales.error),
@@ -177,7 +176,7 @@ class _HutangBarangScreenState extends State<HutangBarangScreen> with SingleTick
                               backgroundColor: AppColors.primary,
                               foregroundColor: Colors.white,
                               elevation: 8,
-                              shadowColor: AppColors.primary.withOpacity(0.5),
+                              shadowColor: AppColors.primary.withValues(alpha: 0.5),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                             ),
                             child: const Text('Ya, Selesai', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
@@ -262,7 +261,7 @@ class _HutangBarangScreenState extends State<HutangBarangScreen> with SingleTick
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF64748B).withOpacity(0.08),
+            color: const Color(0xFF64748B).withValues(alpha: 0.08),
             blurRadius: 24,
             offset: const Offset(0, 10),
           )
@@ -281,7 +280,7 @@ class _HutangBarangScreenState extends State<HutangBarangScreen> with SingleTick
                 height: 120,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: AppColors.primary.withOpacity(0.04),
+                  color: AppColors.primary.withValues(alpha: 0.04),
                 ),
               ),
             ),
@@ -331,12 +330,12 @@ class _HutangBarangScreenState extends State<HutangBarangScreen> with SingleTick
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
-                            colors: [const Color(0xFFF59E0B).withOpacity(0.15), const Color(0xFFF59E0B).withOpacity(0.05)],
+                            colors: [const Color(0xFFF59E0B).withValues(alpha: 0.15), const Color(0xFFF59E0B).withValues(alpha: 0.05)],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                           ),
                           borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: const Color(0xFFF59E0B).withOpacity(0.3)),
+                          border: Border.all(color: const Color(0xFFF59E0B).withValues(alpha: 0.3)),
                         ),
                         child: Text(
                           code,
@@ -366,7 +365,7 @@ class _HutangBarangScreenState extends State<HutangBarangScreen> with SingleTick
                                 color: Colors.white,
                                 borderRadius: BorderRadius.circular(10),
                                 boxShadow: [
-                                  BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 4, offset: const Offset(0, 2))
+                                  BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 4, offset: const Offset(0, 2))
                                 ],
                               ),
                               child: const Icon(Icons.egg_alt_rounded, color: AppColors.primary, size: 20),
@@ -436,10 +435,10 @@ class _HutangBarangScreenState extends State<HutangBarangScreen> with SingleTick
               height: 140,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFF10B981).withOpacity(0.1),
+                color: const Color(0xFF10B981).withValues(alpha: 0.1),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF10B981).withOpacity(0.2),
+                    color: const Color(0xFF10B981).withValues(alpha: 0.2),
                     blurRadius: 40,
                     offset: const Offset(0, 10),
                   )

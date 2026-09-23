@@ -183,9 +183,9 @@ class _InputOvkScreenState extends State<InputOvkScreen> {
             if (data.containsKey('errors')) {
               if (data['errors'] is Map) {
                 final errorValues = (data['errors'] as Map).values;
-                errorMessage += '\n' + errorValues.map((v) => v is List ? v.join('\n') : v.toString()).join('\n');
+                errorMessage += '\n${errorValues.map((v) => v is List ? v.join('\n') : v.toString()).join('\n')}';
               } else {
-                errorMessage += '\n' + data['errors'].toString();
+                errorMessage += '\n${data['errors']}';
               }
             }
           } else {
@@ -290,7 +290,7 @@ class _InputOvkScreenState extends State<InputOvkScreen> {
                                     color: Colors.white,
                                     borderRadius: BorderRadius.circular(16),
                                     border: Border.all(color: Colors.grey.shade200),
-                                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4, offset: const Offset(0, 2))],
+                                    boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 4, offset: const Offset(0, 2))],
                                   ),
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -312,7 +312,7 @@ class _InputOvkScreenState extends State<InputOvkScreen> {
                                       
                                       // Dropdown Produk
                                       DropdownButtonFormField<String>(
-                                        value: row['sku_product'],
+                                        initialValue: row['sku_product'],
                                         isExpanded: true,
                                         hint: const Text('Pilih Obat / Vaksin'),
                                         decoration: InputDecoration(
@@ -358,7 +358,7 @@ class _InputOvkScreenState extends State<InputOvkScreen> {
                                     ],
                                   ),
                                 );
-                              }).toList(),
+                              }),
                               // Tombol Tambah Baris
                               SizedBox(
                                 width: double.infinity,
@@ -388,7 +388,7 @@ class _InputOvkScreenState extends State<InputOvkScreen> {
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -5))],
+                    boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, -5))],
                   ),
                   child: SizedBox(
                     width: double.infinity,

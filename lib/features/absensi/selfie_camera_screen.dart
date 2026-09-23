@@ -124,7 +124,7 @@ class _SelfieCameraScreenState extends State<SelfieCameraScreen> {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(color: Colors.white, width: 4),
-                    color: Colors.white.withOpacity(0.5),
+                    color: Colors.white.withValues(alpha: 0.5),
                   ),
                   child: Center(
                     child: Container(

@@ -122,7 +122,7 @@ class _DepositAgenScreenState extends State<DepositAgenScreen> {
                   filled: true,
                   fillColor: Colors.white,
                 ),
-                value: _selectedCustomer,
+                initialValue: _selectedCustomer,
                 items: _customers.map((c) {
                   return DropdownMenuItem<String>(
                     value: c['code'],
@@ -140,8 +140,8 @@ class _DepositAgenScreenState extends State<DepositAgenScreen> {
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.blue.withOpacity(0.3)),
-                    boxShadow: [BoxShadow(color: Colors.blue.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4))],
+                    border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
+                    boxShadow: [BoxShadow(color: Colors.blue.withValues(alpha: 0.1), blurRadius: 10, offset: const Offset(0, 4))],
                   ),
                   child: Column(
                     children: [

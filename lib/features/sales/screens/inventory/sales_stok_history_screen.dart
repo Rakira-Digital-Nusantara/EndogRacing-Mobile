@@ -82,7 +82,7 @@ class _SalesStokHistoryScreenState extends State<SalesStokHistoryScreen> {
                 const SizedBox(width: 12),
                 Container(
                   decoration: BoxDecoration(
-                    color: _selectedDateRange != null ? AppColors.primary.withOpacity(0.1) : Colors.white,
+                    color: _selectedDateRange != null ? AppColors.primary.withValues(alpha: 0.1) : Colors.white,
                     border: Border.all(color: _selectedDateRange != null ? AppColors.primary : Colors.grey.shade200),
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -208,7 +208,7 @@ class _SalesStokHistoryScreenState extends State<SalesStokHistoryScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -220,7 +220,7 @@ class _SalesStokHistoryScreenState extends State<SalesStokHistoryScreen> {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(icon, color: color, size: 22),

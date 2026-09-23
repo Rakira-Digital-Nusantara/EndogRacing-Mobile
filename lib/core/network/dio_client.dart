@@ -58,7 +58,7 @@ class DioClient {
           if (error.response?.statusCode == 401) {
             // Token Mati / Unauthorized
             await _storage.delete(key: 'auth_token');
-            if (context != null) {
+            if (context != null && context.mounted) {
               // Redirect ke halaman role-selection via GoRouter
               context.go('/role-selection');
             }

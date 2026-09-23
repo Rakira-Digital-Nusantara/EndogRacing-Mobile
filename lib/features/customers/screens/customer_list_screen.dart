@@ -4,7 +4,7 @@ import 'package:endog_racing/core/constants/app_colors.dart';
 import 'package:endog_racing/core/utils/currency_formatter.dart';
 import 'package:endog_racing/features/customers/screens/customer_transaction_history_screen.dart';
 import 'package:endog_racing/features/customers/screens/customer_input_screen.dart';
-import 'package:endog_racing/features/auth/providers/auth_provider.dart';
+
 import 'package:endog_racing/features/customers/providers/customer_provider.dart';
 import 'package:endog_racing/shared/widgets/notification_bell.dart';
 
@@ -29,8 +29,6 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
   @override
   Widget build(BuildContext context) {
     final customerProv = context.watch<CustomerProvider>();
-    final auth = context.watch<AuthProvider>();
-    final userFoto = auth.user?.foto;
     // Filter customers
     final customers = customerProv.customers.where((c) {
       final name = (c['customer_name'] ?? '').toString().toLowerCase();
@@ -134,7 +132,7 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
             context,
             MaterialPageRoute(builder: (context) => const CustomerInputScreen()),
           ).then((_) {
-            if (mounted) context.read<CustomerProvider>().fetchCustomers();
+            if (context.mounted) context.read<CustomerProvider>().fetchCustomers();
           });
         },
         backgroundColor: AppColors.primary,
@@ -155,7 +153,7 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.04),
+                        color: Colors.black.withValues(alpha: 0.04),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
@@ -220,7 +218,7 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                               borderRadius: BorderRadius.circular(16),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.03),
+                                  color: Colors.black.withValues(alpha: 0.03),
                                   blurRadius: 8,
                                   offset: const Offset(0, 2),
                                 ),
@@ -237,14 +235,14 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                                   height: 44,
                                   decoration: BoxDecoration(
                                     gradient: LinearGradient(
-                                      colors: [AppColors.primary, AppColors.primary.withOpacity(0.7)],
+                                      colors: [AppColors.primary, AppColors.primary.withValues(alpha: 0.7)],
                                       begin: Alignment.topLeft,
                                       end: Alignment.bottomRight,
                                     ),
                                     shape: BoxShape.circle,
                                     boxShadow: [
                                       BoxShadow(
-                                        color: AppColors.primary.withOpacity(0.3),
+                                        color: AppColors.primary.withValues(alpha: 0.3),
                                         blurRadius: 6,
                                         offset: const Offset(0, 3),
                                       ),
@@ -280,7 +278,7 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                                           children: [
                                             Container(
                                               padding: const EdgeInsets.all(6),
-                                              decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.1), shape: BoxShape.circle),
+                                              decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.1), shape: BoxShape.circle),
                                               child: const Icon(Icons.location_on_rounded, size: 14, color: AppColors.primary),
                                             ),
                                             const SizedBox(width: 12),
@@ -297,7 +295,7 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                                           children: [
                                             Container(
                                               padding: const EdgeInsets.all(6),
-                                              decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.1), shape: BoxShape.circle),
+                                              decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.1), shape: BoxShape.circle),
                                               child: const Icon(Icons.phone_rounded, size: 14, color: AppColors.primary),
                                             ),
                                             const SizedBox(width: 12),
@@ -345,7 +343,7 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                                                 builder: (context) => CustomerInputScreen(customer: c),
                                               ),
                                             ).then((_) {
-                                              if (mounted) context.read<CustomerProvider>().fetchCustomers();
+                                              if (context.mounted) context.read<CustomerProvider>().fetchCustomers();
                                             });
                                           },
                                           icon: const Icon(Icons.edit_rounded, size: 16, color: AppColors.primary),

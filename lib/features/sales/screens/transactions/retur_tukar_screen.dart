@@ -113,7 +113,7 @@ class _ReturTukarScreenState extends State<ReturTukarScreen> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(
@@ -162,7 +162,7 @@ class _ReturTukarScreenState extends State<ReturTukarScreen> {
                     borderRadius: BorderRadius.circular(24),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
+                        color: Colors.black.withValues(alpha: 0.05),
                         blurRadius: 20,
                         offset: const Offset(0, 10),
                       ),
@@ -185,7 +185,7 @@ class _ReturTukarScreenState extends State<ReturTukarScreen> {
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                     prefixIcon: const Icon(Icons.person_outline_rounded, color: AppColors.primary),
                   ),
-                  value: _selectedCustomerCode,
+                  initialValue: _selectedCustomerCode,
                   items: sales.customers.map((c) {
                     return DropdownMenuItem<String>(
                       value: c['code'],
@@ -207,7 +207,7 @@ class _ReturTukarScreenState extends State<ReturTukarScreen> {
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                     prefixIcon: const Icon(Icons.egg_rounded, color: AppColors.primary),
                   ),
-                  value: _selectedProductSku,
+                  initialValue: _selectedProductSku,
                   items: sales.products.map((p) {
                     return DropdownMenuItem<String>(
                       value: p['sku'],
@@ -270,7 +270,7 @@ class _ReturTukarScreenState extends State<ReturTukarScreen> {
           color: Colors.white,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, -5),
             ),
@@ -289,7 +289,7 @@ class _ReturTukarScreenState extends State<ReturTukarScreen> {
                   borderRadius: BorderRadius.circular(16),
                 ),
                 elevation: 4,
-                shadowColor: AppColors.primary.withOpacity(0.4),
+                shadowColor: AppColors.primary.withValues(alpha: 0.4),
                 disabledBackgroundColor: Colors.grey.shade300,
               ),
               child: _isLoading

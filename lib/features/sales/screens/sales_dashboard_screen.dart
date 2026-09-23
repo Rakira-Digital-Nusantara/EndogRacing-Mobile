@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../utils/sales_notification_dialog.dart';
 import 'package:endog_racing/features/sales/providers/sales_provider.dart';
 import 'package:endog_racing/features/auth/providers/auth_provider.dart';
 import 'package:endog_racing/core/utils/currency_formatter.dart';
@@ -8,7 +7,6 @@ import 'package:endog_racing/core/constants/app_colors.dart';
 import 'package:endog_racing/features/sales/screens/profile/sales_absensi_screen.dart';
 import 'package:endog_racing/features/sales/screens/transactions/hutang_barang_screen.dart';
 import 'package:endog_racing/features/notifications/providers/notification_provider.dart';
-import 'package:endog_racing/features/notifications/screens/notifications_screen.dart';
 import 'package:endog_racing/shared/widgets/notification_bell.dart';
 
 class SalesDashboardScreen extends StatefulWidget {
@@ -59,10 +57,14 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: () async {
+            if (!mounted) return;
             final dateStr = _selectedDate?.toIso8601String().split('T')[0];
             await context.read<SalesProvider>().fetchSalesDashboard(tanggal: dateStr);
+            if (!mounted) return;
             await context.read<SalesProvider>().fetchRekapHarian(tanggal: dateStr);
+            if (!mounted) return;
             await context.read<SalesProvider>().fetchSaldoBelumDisetor();
+            if (!mounted) return;
             await context.read<NotificationProvider>().fetchUnreadCount();
           },
           child: SingleChildScrollView(
@@ -104,7 +106,7 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
                           border: Border.all(color: Colors.grey.shade200),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.grey.withOpacity(0.05),
+                              color: Colors.grey.withValues(alpha: 0.05),
                               blurRadius: 4,
                               offset: const Offset(0, 2),
                             ),
@@ -185,14 +187,14 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
                         padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
-                            colors: [AppColors.primary, AppColors.primary.withOpacity(0.8)],
+                            colors: [AppColors.primary, AppColors.primary.withValues(alpha: 0.8)],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                           ),
                           borderRadius: BorderRadius.circular(12),
                           boxShadow: [
                             BoxShadow(
-                              color: AppColors.primary.withOpacity(0.3),
+                              color: AppColors.primary.withValues(alpha: 0.3),
                               blurRadius: 8,
                               offset: const Offset(0, 4),
                             ),
@@ -228,7 +230,7 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
                 ),
                 const SizedBox(height: 20),
                 // Input Data Button (Absensi)
-                _buildPresensiButton(sales.dashboardData?['absensi']),
+                _buildPresensiButton(context, sales.dashboardData?['absensi']),
                 const SizedBox(height: 16),
 
                 // Tombol Hutang Barang
@@ -249,7 +251,7 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
                     ),
                     style: OutlinedButton.styleFrom(
                       side: const BorderSide(color: Colors.orange, width: 2),
-                      backgroundColor: Colors.orange.withOpacity(0.05),
+                      backgroundColor: Colors.orange.withValues(alpha: 0.05),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                   ),
@@ -449,7 +451,7 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -558,7 +560,7 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -669,7 +671,7 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
     );
   }
 
-  Widget _buildPresensiButton(dynamic absensiData) {
+  Widget _buildPresensiButton(BuildContext context, dynamic absensiData) {
     bool isMasuk = false;
     bool isPulang = false;
 
@@ -738,14 +740,14 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
       height: 100, // Fixed height for PageView
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [AppColors.primary, AppColors.primary.withOpacity(0.8)],
+          colors: [AppColors.primary, AppColors.primary.withValues(alpha: 0.8)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.3),
+            color: AppColors.primary.withValues(alpha: 0.3),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -796,7 +798,7 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white.withValues(alpha: 0.2),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(Icons.show_chart_rounded, color: Colors.white, size: 24),
@@ -820,7 +822,7 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
                     width: _currentHargaPage == index ? 12 : 6,
                     height: 6,
                     decoration: BoxDecoration(
-                      color: _currentHargaPage == index ? Colors.white : Colors.white.withOpacity(0.4),
+                      color: _currentHargaPage == index ? Colors.white : Colors.white.withValues(alpha: 0.4),
                       borderRadius: BorderRadius.circular(3),
                     ),
                   ),

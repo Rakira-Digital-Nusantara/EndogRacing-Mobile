@@ -7,7 +7,6 @@ import '../../auth/providers/auth_provider.dart';
 import 'main_screen.dart';
 import '../providers/dashboard_provider.dart';
 import '../../notifications/providers/notification_provider.dart';
-import '../../notifications/screens/notifications_screen.dart';
 import 'package:endog_racing/shared/widgets/notification_bell.dart';
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -17,7 +16,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  String _metrikFilter = 'Harian';
   DateTimeRange? _selectedDateRange;
 
   @override
@@ -25,6 +23,7 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     // Cek status absen hari ini saat beranda dimuat
     Future.microtask(() {
+      if (!mounted) return;
       context.read<AbsensiProvider>().setRole(false);
       context.read<AbsensiProvider>().checkHistoryHariIni();
       final kandangCode = context.read<AuthProvider>().kandang?.kdgCode ?? '';
@@ -51,7 +50,9 @@ class _HomeScreenState extends State<HomeScreen> {
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: () async {
+            if (!mounted) return;
             await context.read<DashboardProvider>().fetchDashboardData(kandangCode);
+            if (!mounted) return;
             await context.read<NotificationProvider>().fetchUnreadCount();
           },
           child: SingleChildScrollView(
@@ -126,7 +127,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   fontSize: 10,
                   fontWeight: FontWeight.w800,
                   letterSpacing: 1.2,
-                  color: AppColors.primary.withOpacity(0.8),
+                  color: AppColors.primary.withValues(alpha: 0.8),
                 ),
               ),
             ],
@@ -146,7 +147,7 @@ class _HomeScreenState extends State<HomeScreen> {
             margin: const EdgeInsets.only(right: 20, left: 4),
             child: CircleAvatar(
               radius: 16,
-              backgroundColor: AppColors.primary.withOpacity(0.1),
+              backgroundColor: AppColors.primary.withValues(alpha: 0.1),
               backgroundImage: (userFoto != null && userFoto.isNotEmpty) 
                 ? NetworkImage(userFoto) 
                 : null,
@@ -311,7 +312,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   border: Border.all(color: Colors.grey.shade200),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.grey.withOpacity(0.05),
+                      color: Colors.grey.withValues(alpha: 0.05),
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     ),
@@ -396,14 +397,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [AppColors.primary, AppColors.primary.withOpacity(0.8)],
+                    colors: [AppColors.primary, AppColors.primary.withValues(alpha: 0.8)],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.primary.withOpacity(0.3),
+                      color: AppColors.primary.withValues(alpha: 0.3),
                       blurRadius: 8,
                       offset: const Offset(0, 4),
                     ),
@@ -581,51 +582,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
         ],
-      ),
-    );
-  }
-}
-
-class _MetrikFilterDropdown extends StatelessWidget {
-  final String value;
-  final ValueChanged<String> onChanged;
-
-  const _MetrikFilterDropdown({
-    required this.value,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF1F5F9), // Cool gray-blue
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: value,
-          isDense: true,
-          icon: const Icon(Icons.keyboard_arrow_down, size: 16, color: Color(0xFF475569)),
-          style: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
-            color: Color(0xFF1E293B),
-            fontFamily: 'Inter',
-          ),
-          items: ['Harian', 'Mingguan', 'Bulanan', 'Pilih Tanggal...'].map((String val) {
-            return DropdownMenuItem<String>(
-              value: val,
-              child: Text(val),
-            );
-          }).toList(),
-          onChanged: (String? newValue) {
-            if (newValue != null) {
-              onChanged(newValue);
-            }
-          },
-        ),
       ),
     );
   }

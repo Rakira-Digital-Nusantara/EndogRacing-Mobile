@@ -23,7 +23,7 @@ class _InputKematianScreenState extends State<InputKematianScreen> {
   final TextEditingController _penyebabController = TextEditingController();
   String? _selectedPenyakitCode;
   List<Map<String, dynamic>> _penyakitList = [];
-  bool _isLoadingPenyakit = false;
+  final bool _isLoadingPenyakit = false;
 
   bool _isLoading = false;
   bool _isLoadingForm = false;
@@ -254,7 +254,7 @@ class _InputKematianScreenState extends State<InputKematianScreen> {
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.02),
+                          color: Colors.black.withValues(alpha: 0.02),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -408,7 +408,7 @@ class _InputKematianScreenState extends State<InputKematianScreen> {
                                       color: _kategori == 'Mati' ? Colors.white : Colors.transparent,
                                       borderRadius: BorderRadius.circular(8),
                                       boxShadow: _kategori == 'Mati' ? [
-                                        BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2)),
+                                        BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2)),
                                       ] : [],
                                     ),
                                     child: Text(
@@ -430,7 +430,7 @@ class _InputKematianScreenState extends State<InputKematianScreen> {
                                       color: _kategori == 'Afkir' ? Colors.white : Colors.transparent,
                                       borderRadius: BorderRadius.circular(8),
                                       boxShadow: _kategori == 'Afkir' ? [
-                                        BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2)),
+                                        BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2)),
                                       ] : [],
                                     ),
                                     child: Text(
@@ -481,7 +481,7 @@ class _InputKematianScreenState extends State<InputKematianScreen> {
                           _isLoadingPenyakit
                               ? const Center(child: CircularProgressIndicator())
                               : DropdownButtonFormField<String>(
-                                  value: _selectedPenyakitCode,
+                                  initialValue: _selectedPenyakitCode,
                                   decoration: InputDecoration(
                                     filled: true,
                                     fillColor: const Color(0xFFF1F5F9),

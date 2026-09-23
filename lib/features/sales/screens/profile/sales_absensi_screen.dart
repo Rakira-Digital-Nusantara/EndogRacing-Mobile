@@ -76,7 +76,7 @@ class _SalesAbsensiScreenState extends State<SalesAbsensiScreen> {
 
     try {
       Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
+        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
       );
       
       if (position.isMocked) {
@@ -107,9 +107,7 @@ class _SalesAbsensiScreenState extends State<SalesAbsensiScreen> {
         setState(() {
           _currentPosition = position;
           
-          bool isDalamArea = true; // Dummy sementara selalu true
-          
-          _locationMessage = isDalamArea ? "Area Sesuai" : "Di luar area";
+          _locationMessage = "Area Sesuai";
           _isCheckingLocation = false;
         });
       }
@@ -230,7 +228,7 @@ class _SalesAbsensiScreenState extends State<SalesAbsensiScreen> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: hasLocation ? Colors.green.withOpacity(0.1) : Colors.red.withOpacity(0.1),
+                    color: hasLocation ? Colors.green.withValues(alpha: 0.1) : Colors.red.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(

@@ -6,7 +6,6 @@ import 'package:endog_racing/shared/widgets/notification_bell.dart';
 import 'package:endog_racing/core/utils/currency_formatter.dart';
 import 'package:endog_racing/features/auth/providers/auth_provider.dart';
 import 'package:endog_racing/features/sales/providers/sales_provider.dart';
-import 'package:endog_racing/features/sales/utils/sales_notification_dialog.dart';
 
 class SalesProfileScreen extends StatelessWidget {
   const SalesProfileScreen({super.key});
@@ -15,7 +14,6 @@ class SalesProfileScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     final user = auth.user;
-    final userFoto = user?.foto;
     final salesProvider = context.watch<SalesProvider>();
     final profile = salesProvider.salesProfile;
 
@@ -59,7 +57,7 @@ class SalesProfileScreen extends StatelessWidget {
                     fontSize: 10,
                     fontWeight: FontWeight.w800,
                     letterSpacing: 1.2,
-                    color: AppColors.primary.withOpacity(0.8),
+                    color: AppColors.primary.withValues(alpha: 0.8),
                   ),
                 ),
               ],
@@ -122,7 +120,7 @@ class SalesProfileScreen extends StatelessWidget {
                 border: Border.all(color: Colors.grey.shade200),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.02),
+                    color: Colors.black.withValues(alpha: 0.02),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   )
@@ -220,7 +218,7 @@ class SalesProfileScreen extends StatelessWidget {
                       border: Border.all(color: Colors.grey.shade200),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.02),
+                          color: Colors.black.withValues(alpha: 0.02),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         )
@@ -246,7 +244,7 @@ class SalesProfileScreen extends StatelessWidget {
                       border: Border.all(color: Colors.grey.shade200),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.02),
+                          color: Colors.black.withValues(alpha: 0.02),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         )
@@ -274,7 +272,7 @@ class SalesProfileScreen extends StatelessWidget {
                 border: Border.all(color: Colors.grey.shade200),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.02),
+                    color: Colors.black.withValues(alpha: 0.02),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   )
@@ -325,7 +323,7 @@ class SalesProfileScreen extends StatelessWidget {
                                   height: 100,
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
-                                    color: Colors.red.withOpacity(0.08),
+                                    color: Colors.red.withValues(alpha: 0.08),
                                   ),
                                   child: Center(
                                     child: Container(
@@ -333,7 +331,7 @@ class SalesProfileScreen extends StatelessWidget {
                                       height: 75,
                                       decoration: BoxDecoration(
                                         shape: BoxShape.circle,
-                                        color: Colors.red.withOpacity(0.15),
+                                        color: Colors.red.withValues(alpha: 0.15),
                                       ),
                                       child: Center(
                                         child: Container(

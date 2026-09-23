@@ -46,7 +46,7 @@ class _SplashScreenState extends State<SplashScreen> {
                   borderRadius: BorderRadius.circular(32),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
+                      color: Colors.black.withValues(alpha: 0.1),
                       blurRadius: 20,
                       spreadRadius: 5,
                     )
@@ -100,7 +100,7 @@ class _SplashScreenState extends State<SplashScreen> {
                   child: Container(
                     height: 8,
                     width: double.infinity,
-                    color: Colors.white.withOpacity(0.2), // Background track
+                    color: Colors.white.withValues(alpha: 0.2), // Background track
                     child: TweenAnimationBuilder<double>(
                       tween: Tween<double>(begin: 0.0, end: 1.0),
                       duration: const Duration(seconds: 4), // Animasi penuh dalam 4 detik

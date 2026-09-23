@@ -89,7 +89,7 @@ class _KandangActivityScreenState extends State<KandangActivityScreen> {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.1),
+                    color: AppColors.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Icon(Icons.calendar_month_rounded, color: AppColors.primary, size: 24),
@@ -185,9 +185,9 @@ class _KandangActivityScreenState extends State<KandangActivityScreen> {
                                   width: 40,
                                   height: 40,
                                   decoration: BoxDecoration(
-                                    color: typeColor.withOpacity(0.15),
+                                    color: typeColor.withValues(alpha: 0.15),
                                     shape: BoxShape.circle,
-                                    border: Border.all(color: typeColor.withOpacity(0.3), width: 2),
+                                    border: Border.all(color: typeColor.withValues(alpha: 0.3), width: 2),
                                   ),
                                   child: Icon(typeIcon, color: typeColor, size: 20),
                                 ),
@@ -214,7 +214,7 @@ class _KandangActivityScreenState extends State<KandangActivityScreen> {
                                   border: Border.all(color: Colors.grey.shade100),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withOpacity(0.03),
+                                      color: Colors.black.withValues(alpha: 0.03),
                                       blurRadius: 10,
                                       offset: const Offset(0, 4),
                                     )
@@ -282,7 +282,7 @@ class _KandangActivityScreenState extends State<KandangActivityScreen> {
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.02),
+                  color: Colors.black.withValues(alpha: 0.02),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 )

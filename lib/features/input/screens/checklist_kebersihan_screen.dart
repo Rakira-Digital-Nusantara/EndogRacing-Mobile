@@ -114,6 +114,7 @@ class _ChecklistKebersihanScreenState extends State<ChecklistKebersihanScreen> {
         }
 
         // 2. Direct Upload per item
+        if (!mounted) return;
         final kandangCode = context.read<AuthProvider>().kandang?.kdgCode ?? "KDG-001";
         final tanggal = DateTime.now().toIso8601String().split('T')[0];
         
@@ -491,7 +492,7 @@ class _ChecklistKebersihanScreenState extends State<ChecklistKebersihanScreen> {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, -4),
           )

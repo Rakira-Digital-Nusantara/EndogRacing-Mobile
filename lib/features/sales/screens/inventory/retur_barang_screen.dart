@@ -125,7 +125,7 @@ class _ReturBarangScreenState extends State<ReturBarangScreen> {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Icon(Icons.assignment_return_rounded, color: Colors.white, size: 28),
@@ -163,7 +163,7 @@ class _ReturBarangScreenState extends State<ReturBarangScreen> {
                       borderRadius: BorderRadius.circular(24),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
+                          color: Colors.black.withValues(alpha: 0.05),
                           blurRadius: 20,
                           offset: const Offset(0, 10),
                         )
@@ -187,7 +187,7 @@ class _ReturBarangScreenState extends State<ReturBarangScreen> {
                         DropdownButtonFormField<String>(
                           isExpanded: true,
                           decoration: _buildInputDecoration('Pilih Produk', Icons.inventory_2_rounded),
-                          value: _selectedProduct,
+                          initialValue: _selectedProduct,
                           items: sales.returProdukList.map((p) {
                             final name = p['sku_name']?.toString() ?? '-';
                             final stok = p['stok_di_mobil']?.toString() ?? '0';
@@ -206,7 +206,7 @@ class _ReturBarangScreenState extends State<ReturBarangScreen> {
                         DropdownButtonFormField<String>(
                           isExpanded: true,
                           decoration: _buildInputDecoration('Pilih Alasan', Icons.feedback_rounded),
-                          value: _selectedAlasan,
+                          initialValue: _selectedAlasan,
                           items: sales.returAlasanList.map((a) => DropdownMenuItem<String>(
                             value: a, 
                             child: Text(a, style: const TextStyle(fontSize: 14))
@@ -265,7 +265,7 @@ class _ReturBarangScreenState extends State<ReturBarangScreen> {
           color: Colors.white,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, -5),
             )
@@ -284,7 +284,7 @@ class _ReturBarangScreenState extends State<ReturBarangScreen> {
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 elevation: 4,
-                shadowColor: Colors.red.withOpacity(0.4),
+                shadowColor: Colors.red.withValues(alpha: 0.4),
                 disabledBackgroundColor: Colors.red.shade200,
               ),
               child: _isLoading

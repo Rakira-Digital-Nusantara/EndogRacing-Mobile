@@ -234,7 +234,7 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
                     fontSize: 10,
                     fontWeight: FontWeight.w800,
                     letterSpacing: 1.2,
-                    color: AppColors.primary.withOpacity(0.8),
+                    color: AppColors.primary.withValues(alpha: 0.8),
                   ),
                 ),
               ],
@@ -260,7 +260,7 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
                 ),
                 child: CircleAvatar(
                   radius: 16,
-                  backgroundColor: AppColors.primary.withOpacity(0.1),
+                  backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                   backgroundImage: (userFoto != null && userFoto.isNotEmpty) 
                     ? NetworkImage(userFoto) 
                     : null,
@@ -421,7 +421,7 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
                     ],
                   ),
                 );
-              }).toList(),
+              }),
               const SizedBox(height: 16),
             ],
           );
@@ -452,7 +452,7 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           )
@@ -465,7 +465,7 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.15), // Transparan agar tidak terlalu pekat
+              color: color.withValues(alpha: 0.15), // Transparan agar tidak terlalu pekat
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(icon, color: color, size: 28), // Iconnya yang pakai warna solid
@@ -601,7 +601,7 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.03),
+                      color: Colors.black.withValues(alpha: 0.03),
                       blurRadius: 15,
                       offset: const Offset(0, 5),
                     )
@@ -621,7 +621,7 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
                           Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: isDraft ? Colors.orange.withOpacity(0.15) : const Color(0xFF16A34A).withOpacity(0.15),
+                              color: isDraft ? Colors.orange.withValues(alpha: 0.15) : const Color(0xFF16A34A).withValues(alpha: 0.15),
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
@@ -665,7 +665,7 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
                                           color: isDraft ? const Color(0xFFFFFBEB) : const Color(0xFFF0FDF4),
                                           borderRadius: BorderRadius.circular(6),
                                           border: Border.all(
-                                            color: isDraft ? Colors.orange.withOpacity(0.2) : const Color(0xFF16A34A).withOpacity(0.2),
+                                            color: isDraft ? Colors.orange.withValues(alpha: 0.2) : const Color(0xFF16A34A).withValues(alpha: 0.2),
                                           ),
                                         ),
                                         child: Text(
@@ -690,7 +690,7 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
                     ),
                   ),
                 );
-              }).toList(),
+              }),
           ],
         ),
       );
@@ -835,7 +835,7 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
                                   color: Colors.white,
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border.all(color: Colors.grey.shade200),
-                                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 2, offset: const Offset(0, 1))],
+                                  boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 2, offset: const Offset(0, 1))],
                                 ),
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -904,11 +904,7 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
         ),
       );
     }
-    // Get selected PO object
-    final selectedPoObj = _pendingPOs.firstWhere(
-      (p) => p['po_h'] == _selectedPoCode,
-      orElse: () => {},
-    );
+    // Get selected PO object - Removed (unused variable)
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
@@ -919,7 +915,7 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.02),
+              color: Colors.black.withValues(alpha: 0.02),
               blurRadius: 10,
               offset: const Offset(0, 4),
             )
@@ -953,7 +949,7 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
             const Text('Kode PO (Surat Jalan)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF475569))),
             const SizedBox(height: 8),
             DropdownButtonFormField<String>(
-              value: _selectedPoCode,
+              initialValue: _selectedPoCode,
               isExpanded: true,
               hint: const Text('Pilih Kode PO'),
               decoration: InputDecoration(
@@ -1041,7 +1037,7 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
                           ),
                           const SizedBox(height: 12),
                           DropdownButtonFormField<String>(
-                            value: item['sku'],
+                            initialValue: item['sku'],
                             isExpanded: true,
                             hint: const Text('Pilih Produk (SKU)'),
                             decoration: InputDecoration(
@@ -1075,7 +1071,7 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
                         ],
                       ),
                     );
-                  }).toList(),
+                  }),
                   
                   const SizedBox(height: 8),
                   SizedBox(

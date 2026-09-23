@@ -138,9 +138,9 @@ class _InputPakanScreenState extends State<InputPakanScreen> {
           if (data.containsKey('errors')) {
             if (data['errors'] is Map) {
               final errorValues = (data['errors'] as Map).values;
-              errorMessage += '\n' + errorValues.map((v) => v is List ? v.join('\n') : v.toString()).join('\n');
+              errorMessage += '\n${errorValues.map((v) => v is List ? v.join('\n') : v.toString()).join('\n')}';
             } else {
-              errorMessage += '\n' + data['errors'].toString();
+              errorMessage += '\n${data['errors']}';
             }
           }
         } else {
@@ -220,7 +220,7 @@ class _InputPakanScreenState extends State<InputPakanScreen> {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(16),
-                        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))],
+                        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 4))],
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -286,7 +286,7 @@ class _InputPakanScreenState extends State<InputPakanScreen> {
                         ],
                       ),
                     );
-                  }).toList(),
+                  }),
 
                   // BUTTON TAMBAH PAKAN
                   Center(
@@ -311,7 +311,7 @@ class _InputPakanScreenState extends State<InputPakanScreen> {
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: Colors.white,
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -5))],
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, -5))],
         ),
         child: SafeArea(
           child: Column(

@@ -221,7 +221,7 @@ class _SalesHistoryScreenState extends State<SalesHistoryScreen> {
                       gradient: LinearGradient(
                         colors: [
                           AppColors.primary,
-                          AppColors.primary.withOpacity(0.8),
+                          AppColors.primary.withValues(alpha: 0.8),
                         ],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
@@ -348,7 +348,7 @@ class _SalesHistoryScreenState extends State<SalesHistoryScreen> {
                           borderRadius: BorderRadius.circular(12),
                           boxShadow: [
                             BoxShadow(
-                              color: AppColors.primary.withOpacity(0.3),
+                              color: AppColors.primary.withValues(alpha: 0.3),
                               blurRadius: 8,
                               offset: const Offset(0, 4),
                             ),
@@ -665,7 +665,7 @@ class _SalesHistoryScreenState extends State<SalesHistoryScreen> {
                 Row(
                   children: [
                     CircleAvatar(
-                      backgroundColor: statusColor.withOpacity(0.1),
+                      backgroundColor: statusColor.withValues(alpha: 0.1),
                       radius: 24,
                       child: Text(
                         initials,
@@ -706,7 +706,7 @@ class _SalesHistoryScreenState extends State<SalesHistoryScreen> {
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: statusColor.withOpacity(0.1),
+                        color: statusColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Row(
@@ -1316,7 +1316,7 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: widget.statusColor.withOpacity(0.1),
+                  color: widget.statusColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Row(
@@ -1350,11 +1350,11 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   gradient: LinearGradient(
-                    colors: [AppColors.primary.withOpacity(0.2), AppColors.primary.withOpacity(0.05)],
+                    colors: [AppColors.primary.withValues(alpha: 0.2), AppColors.primary.withValues(alpha: 0.05)],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
-                  border: Border.all(color: AppColors.primary.withOpacity(0.3), width: 1.5),
+                  border: Border.all(color: AppColors.primary.withValues(alpha: 0.3), width: 1.5),
                 ),
                 alignment: Alignment.center,
                 child: Text(
@@ -1410,7 +1410,7 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
                   Container(
                     padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
+                      color: AppColors.primary.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(Icons.shopping_bag_rounded, size: 14, color: AppColors.primary),
@@ -1435,7 +1435,7 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.03),
+                      color: Colors.black.withValues(alpha: 0.03),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -1501,7 +1501,7 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
                 Container(
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.1),
+                    color: AppColors.primary.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(Icons.receipt_long_rounded, size: 14, color: AppColors.primary),
@@ -1623,7 +1623,7 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
               backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
               elevation: 4,
-              shadowColor: AppColors.primary.withOpacity(0.4),
+              shadowColor: AppColors.primary.withValues(alpha: 0.4),
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),

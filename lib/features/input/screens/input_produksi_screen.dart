@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:dio/dio.dart';
@@ -93,7 +94,7 @@ class _InputProduksiScreenState extends State<InputProduksiScreen> {
             } else {
                _skuUtuh = '1500123';
                _skuRusak = '100001';
-               print("API TIDAK MENGEMBALIKAN ITEMS: $innerData");
+               debugPrint("API TIDAK MENGEMBALIKAN ITEMS: $innerData");
             }
           }
         }
@@ -183,7 +184,7 @@ class _InputProduksiScreenState extends State<InputProduksiScreen> {
         if (data is Map && data.containsKey('message')) {
           errorMessage = data['message'];
           if (data.containsKey('errors')) {
-            errorMessage += '\n' + data['errors'].toString();
+            errorMessage += '\n${data['errors']}';
           }
         } else {
           errorMessage = 'Error ${e.response?.statusCode}: ${e.response?.statusMessage}';
@@ -363,7 +364,7 @@ class _InputProduksiScreenState extends State<InputProduksiScreen> {
                                 color: _selectedTabIndex == 0 ? Colors.white : Colors.transparent,
                                 borderRadius: BorderRadius.circular(8),
                                 boxShadow: _selectedTabIndex == 0 ? [
-                                  BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2)),
+                                  BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2)),
                                 ] : [],
                               ),
                               child: Text(
@@ -385,7 +386,7 @@ class _InputProduksiScreenState extends State<InputProduksiScreen> {
                                 color: _selectedTabIndex == 1 ? Colors.white : Colors.transparent,
                                 borderRadius: BorderRadius.circular(8),
                                 boxShadow: _selectedTabIndex == 1 ? [
-                                  BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2)),
+                                  BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2)),
                                 ] : [],
                               ),
                               child: Text(
@@ -410,7 +411,7 @@ class _InputProduksiScreenState extends State<InputProduksiScreen> {
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
-                        BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4)),
+                        BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4)),
                       ],
                     ),
                     child: Column(
@@ -496,7 +497,7 @@ class _InputProduksiScreenState extends State<InputProduksiScreen> {
         decoration: BoxDecoration(
           color: Colors.white,
           boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -5)),
+            BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, -5)),
           ],
         ),
         child: SafeArea(
@@ -521,13 +522,11 @@ class _IntegerInput extends StatefulWidget {
   final int value;
   final Function(int) onChanged;
   final Color accentColor;
-  final Color? bgColor;
 
   const _IntegerInput({
     required this.value,
     required this.onChanged,
     required this.accentColor,
-    this.bgColor,
   });
 
   @override
@@ -563,7 +562,7 @@ class _IntegerInputState extends State<_IntegerInput> {
 
   @override
   Widget build(BuildContext context) {
-    final bg = widget.bgColor ?? const Color(0xFFF1F5F9); 
+    final bg = const Color(0xFFF1F5F9); 
     
     return Container(
       height: 54,
@@ -645,13 +644,11 @@ class _DecimalInput extends StatefulWidget {
   final double value;
   final Function(double) onChanged;
   final Color accentColor;
-  final Color? bgColor;
 
   const _DecimalInput({
     required this.value,
     required this.onChanged,
     required this.accentColor,
-    this.bgColor,
   });
 
   @override
@@ -699,7 +696,7 @@ class _DecimalInputState extends State<_DecimalInput> {
 
   @override
   Widget build(BuildContext context) {
-    final bg = widget.bgColor ?? const Color(0xFFF1F5F9);
+    final bg = const Color(0xFFF1F5F9);
     
     return Container(
       height: 54,

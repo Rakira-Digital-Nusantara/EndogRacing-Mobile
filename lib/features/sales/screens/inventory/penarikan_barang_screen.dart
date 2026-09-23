@@ -184,7 +184,7 @@ class _PenarikanBarangScreenState extends State<PenarikanBarangScreen> {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Icon(Icons.outbox_rounded, color: Colors.white, size: 28),
@@ -224,7 +224,7 @@ class _PenarikanBarangScreenState extends State<PenarikanBarangScreen> {
                       borderRadius: BorderRadius.circular(24),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
+                          color: Colors.black.withValues(alpha: 0.05),
                           blurRadius: 20,
                           offset: const Offset(0, 10),
                         )
@@ -238,7 +238,7 @@ class _PenarikanBarangScreenState extends State<PenarikanBarangScreen> {
                         DropdownButtonFormField<String>(
                           isExpanded: true,
                           decoration: _buildInputDecoration('Pilih Gudang Asal', Icons.warehouse_rounded),
-                          value: _selectedGudangAsal,
+                          initialValue: _selectedGudangAsal,
                           items: sales.tarikGudangAsalList.map((g) => DropdownMenuItem<String>(
                             value: g['gudang_code']?.toString(), 
                             child: Text(g['gudang_nama']?.toString() ?? '-', style: const TextStyle(fontSize: 14)),
@@ -254,7 +254,7 @@ class _PenarikanBarangScreenState extends State<PenarikanBarangScreen> {
                         DropdownButtonFormField<String>(
                           isExpanded: true,
                           decoration: _buildInputDecoration('Pilih Produk', Icons.inventory_2_rounded),
-                          value: _selectedProduct,
+                          initialValue: _selectedProduct,
                           items: sales.tarikProdukList.map((p) {
                             final name = p['sku_name']?.toString() ?? '-';
                             final isTelurItem = p['sku_category']?.toString().toLowerCase().contains('telur') ?? false;
@@ -311,7 +311,7 @@ class _PenarikanBarangScreenState extends State<PenarikanBarangScreen> {
           color: Colors.white,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, -5),
             )
@@ -330,7 +330,7 @@ class _PenarikanBarangScreenState extends State<PenarikanBarangScreen> {
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 elevation: 4,
-                shadowColor: AppColors.primary.withOpacity(0.4),
+                shadowColor: AppColors.primary.withValues(alpha: 0.4),
               ),
               child: _isLoading
                 ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))

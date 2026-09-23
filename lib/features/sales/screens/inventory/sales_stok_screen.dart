@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:endog_racing/core/constants/app_colors.dart';
 import 'package:endog_racing/features/auth/providers/auth_provider.dart';
 import 'package:endog_racing/features/sales/providers/sales_provider.dart';
-import 'package:endog_racing/features/sales/utils/sales_notification_dialog.dart';
 import 'package:endog_racing/core/utils/currency_formatter.dart';
 import 'package:endog_racing/shared/widgets/notification_bell.dart';
 
@@ -33,7 +32,6 @@ class _SalesStokScreenState extends State<SalesStokScreen> {
   Widget build(BuildContext context) {
     final sales = context.watch<SalesProvider>();
     final auth = context.watch<AuthProvider>();
-    final userFoto = auth.user?.foto;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC), // Cool off-white matching Kandang
@@ -377,7 +375,7 @@ class _SalesStokScreenState extends State<SalesStokScreen> {
         border: borderColor != null ? Border.all(color: borderColor, width: 1.5) : null,
         boxShadow: [
           BoxShadow(
-            color: (borderColor ?? Colors.black).withOpacity(0.05),
+            color: (borderColor ?? Colors.black).withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -426,7 +424,7 @@ class _SalesStokScreenState extends State<SalesStokScreen> {
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: textColor.withOpacity(0.7),
+              color: textColor.withValues(alpha: 0.7),
             ),
           ),
         ],
@@ -454,7 +452,7 @@ class _SalesStokScreenState extends State<SalesStokScreen> {
             border: Border.all(color: Colors.grey.shade200),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.02),
+                color: Colors.black.withValues(alpha: 0.02),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -467,7 +465,7 @@ class _SalesStokScreenState extends State<SalesStokScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: iconColor.withOpacity(0.1),
+                  color: iconColor.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(icon, color: iconColor, size: 24),
@@ -510,7 +508,7 @@ class _SalesStokScreenState extends State<SalesStokScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -522,7 +520,7 @@ class _SalesStokScreenState extends State<SalesStokScreen> {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(icon, color: color, size: 22),

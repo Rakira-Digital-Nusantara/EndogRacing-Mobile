@@ -44,6 +44,7 @@ class _AbsensiScreenState extends State<AbsensiScreen> {
 
     try {
       final position = await LocationService().getCurrentLocation();
+      if (!mounted) return;
       final kandang = context.read<AuthProvider>().kandang;
       
       bool isDalamArea = false;
@@ -226,8 +227,8 @@ class _AbsensiScreenState extends State<AbsensiScreen> {
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
                     color: isSuccess
-                        ? Colors.green.withOpacity(0.1)
-                        : Colors.red.withOpacity(0.1),
+                        ? Colors.green.withValues(alpha: 0.1)
+                        : Colors.red.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(

@@ -81,6 +81,7 @@ class _LoginKandangScreenState extends State<LoginKandangScreen> {
     }
 
     // 2. Buka Barcode Scanner
+    if (!mounted) return;
     final scannedBarcode = await Navigator.push<String>(
       context,
       MaterialPageRoute(builder: (context) => const BarcodeScannerScreen()),
@@ -96,7 +97,7 @@ class _LoginKandangScreenState extends State<LoginKandangScreen> {
       
       // 3. Ambil GPS secara Presisi
       try {
-        final position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+        final position = await Geolocator.getCurrentPosition(locationSettings: const LocationSettings(accuracy: LocationAccuracy.high));
         final response = await authProvider.verifyBarcode(scannedBarcode, latitude: position.latitude, longitude: position.longitude);
 
         if (!mounted) return;
@@ -309,7 +310,7 @@ class _LoginKandangScreenState extends State<LoginKandangScreen> {
                       children: [
                         Expanded(
                           child: DropdownButtonFormField<String>(
-                            value: _selectedKandangCode,
+                            initialValue: _selectedKandangCode,
                             dropdownColor: Colors.white,
                             borderRadius: BorderRadius.circular(16),
                             elevation: 8,
@@ -347,7 +348,7 @@ class _LoginKandangScreenState extends State<LoginKandangScreen> {
                         Container(
                           height: 54, // Matches standard TextFormField height approximately
                           decoration: BoxDecoration(
-                            color: AppColors.primary.withOpacity(0.1),
+                            color: AppColors.primary.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(color: Colors.grey.shade200),
                           ),

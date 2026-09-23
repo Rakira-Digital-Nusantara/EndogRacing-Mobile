@@ -318,10 +318,6 @@ class _RiwayatSetoranScreenState extends State<RiwayatSetoranScreen> {
                   sliver: SliverList(
                     delegate: SliverChildBuilderDelegate((context, index) {
                       final item = filteredData[index];
-                      final statusRaw =
-                          item['status_setoran']?.toString().toUpperCase() ??
-                          item['status']?.toString().toUpperCase() ??
-                          'PENDING';
 
 
                       DateTime dt;
@@ -363,7 +359,7 @@ class _RiwayatSetoranScreenState extends State<RiwayatSetoranScreen> {
                           border: Border.all(color: Colors.grey.shade100),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.02),
+                              color: Colors.black.withValues(alpha: 0.02),
                               blurRadius: 8,
                               offset: const Offset(0, 2),
                             ),

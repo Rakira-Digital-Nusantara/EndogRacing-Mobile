@@ -200,7 +200,7 @@ class InputHomeScreen extends StatelessWidget {
                   fontSize: 10,
                   fontWeight: FontWeight.w800,
                   letterSpacing: 1.2,
-                  color: AppColors.primary.withOpacity(0.8),
+                  color: AppColors.primary.withValues(alpha: 0.8),
                 ),
               ),
             ],
@@ -226,7 +226,7 @@ class InputHomeScreen extends StatelessWidget {
                 ),
                 child: CircleAvatar(
                   radius: 16,
-                  backgroundColor: AppColors.primary.withOpacity(0.1),
+                  backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                   backgroundImage: (userFoto != null && userFoto.isNotEmpty) 
                     ? NetworkImage(userFoto) 
                     : null,

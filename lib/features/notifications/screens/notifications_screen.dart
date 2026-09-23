@@ -20,14 +20,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     });
   }
 
-  String _formatDate(String isoString) {
-    try {
-      final date = DateTime.parse(isoString);
-      return DateFormat('dd MMM yyyy, HH:mm', 'id_ID').format(date);
-    } catch (e) {
-      return isoString;
-    }
-  }
 
   String _getTimeAgo(String isoString) {
     try {
@@ -83,7 +75,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 return TextButton(
                   onPressed: () async {
                     await provider.markAllAsRead();
-                    if (mounted) {
+                    if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: const Text('Semua notifikasi ditandai dibaca'),
@@ -161,7 +153,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.grey.withOpacity(0.1),
+                          color: Colors.grey.withValues(alpha: 0.1),
                           blurRadius: 20,
                           offset: const Offset(0, 10),
                         ),
@@ -208,12 +200,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: isUnread ? AppColors.primary.withOpacity(0.3) : Colors.transparent,
+                      color: isUnread ? AppColors.primary.withValues(alpha: 0.3) : Colors.transparent,
                       width: 1.5,
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.grey.withOpacity(0.04),
+                        color: Colors.grey.withValues(alpha: 0.04),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
@@ -239,7 +231,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
                                 color: isUnread 
-                                  ? AppColors.primary.withOpacity(0.1) 
+                                  ? AppColors.primary.withValues(alpha: 0.1) 
                                   : const Color(0xFFF1F5F9),
                                 shape: BoxShape.circle,
                               ),

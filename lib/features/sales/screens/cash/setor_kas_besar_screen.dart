@@ -155,7 +155,7 @@ class _SetorKasBesarScreenState extends State<SetorKasBesarScreen> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(
@@ -219,7 +219,7 @@ class _SetorKasBesarScreenState extends State<SetorKasBesarScreen> {
                     borderRadius: BorderRadius.circular(24),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
+                        color: Colors.black.withValues(alpha: 0.05),
                         blurRadius: 20,
                         offset: const Offset(0, 10),
                       ),
@@ -337,7 +337,7 @@ class _SetorKasBesarScreenState extends State<SetorKasBesarScreen> {
           color: Colors.white,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, -5),
             ),
@@ -385,7 +385,7 @@ class _SetorKasBesarScreenState extends State<SetorKasBesarScreen> {
                         formData,
                       );
 
-                      if (mounted) {
+                      if (context.mounted) {
                         setState(() => _isSubmitting = false);
                         if (success) {
                           ScaffoldMessenger.of(context).showSnackBar(
@@ -417,7 +417,7 @@ class _SetorKasBesarScreenState extends State<SetorKasBesarScreen> {
                   borderRadius: BorderRadius.circular(16),
                 ),
                 elevation: 4,
-                shadowColor: AppColors.primary.withOpacity(0.4),
+                shadowColor: AppColors.primary.withValues(alpha: 0.4),
               ),
               child: _isSubmitting
                   ? const SizedBox(
