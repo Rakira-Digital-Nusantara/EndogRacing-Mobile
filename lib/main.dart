@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -23,10 +23,12 @@ import 'features/kandang/data/repositories/kandang_repository.dart';
 import 'features/absensi/data/repositories/absensi_repository.dart';
 import 'features/absensi/providers/absensi_provider.dart';
 
+/// Handler background: dijalankan saat app tertutup dan ada notifikasi masuk.
+/// Wajib top-level function (bukan method di dalam class).
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
-  debugPrint("Handling a background message: ${message.messageId}");
+  debugPrint("📬 Background message received: ${message.messageId}");
 
   String? title = message.notification?.title ?? message.data['title'] ?? 'Notifikasi Baru';
   String? body = message.notification?.body ?? message.data['body'] ?? message.data['message'] ?? 'Anda memiliki pesan baru';
@@ -35,19 +37,20 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   if (notificationId > 2147483647) notificationId = notificationId % 2147483647;
 
   final FlutterLocalNotificationsPlugin localNotificationsPlugin = FlutterLocalNotificationsPlugin();
-  
+
   const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
   const iosInit = DarwinInitializationSettings();
   const initSettings = InitializationSettings(android: androidInit, iOS: iosInit);
   await localNotificationsPlugin.initialize(settings: initSettings);
 
+  // Gunakan channel ID yang sama (kNotificationChannelId = 'high_importance_channel')
   const channel = AndroidNotificationChannel(
-    'high_importance_channel_v2',
+    kNotificationChannelId,   // konsisten dengan notification_provider.dart & AndroidManifest
     'High Importance Notifications',
-    description: 'This channel is used for important notifications.',
+    description: 'Notifikasi penting dari Endog Racing.',
     importance: Importance.max,
   );
-  
+
   await localNotificationsPlugin
       .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
       ?.createNotificationChannel(channel);
@@ -82,6 +85,7 @@ void main() async {
 
   await Firebase.initializeApp();
 
+  // Daftarkan handler background terlebih dahulu
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
   final dioClient = DioClient();
@@ -100,6 +104,17 @@ void main() async {
   final notificationProvider = NotificationProvider(dioClient);
 
   final router = createRouter(authProvider);
+
+  // Set callback navigasi: saat notifikasi diklik, arahkan ke halaman /notifications
+  notificationProvider.onNotificationTap = (route) {
+    if (rootNavigatorKey.currentContext != null) {
+      router.go(route);
+    }
+  };
+
+  // Inisialisasi Firebase Messaging (foreground listener, permission, token)
+  // Dipanggil di sini agar terpasang sejak app pertama kali buka.
+  await notificationProvider.initFirebaseMessaging();
 
   runApp(
     MultiProvider(

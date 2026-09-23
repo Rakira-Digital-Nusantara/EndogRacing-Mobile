@@ -1,3 +1,4 @@
+﻿import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 
 import '../../kandang/data/models/kandang_model.dart';
@@ -33,6 +34,10 @@ class AuthProvider extends ChangeNotifier {
       _isLoggedIn = true;
       _isLoading = false;
       notifyListeners();
+
+      // Kirim FCM Token ke Backend agar notifikasi bisa diarahkan ke HP ini
+      await _submitFcmToken();
+
       return true;
     } catch (e) {
       _isLoading = false;
@@ -71,6 +76,10 @@ class AuthProvider extends ChangeNotifier {
       _isLoggedIn = true;
       _isLoading = false;
       notifyListeners();
+
+      // Kirim FCM Token ke Backend agar notifikasi bisa diarahkan ke HP ini
+      await _submitFcmToken();
+
       return true;
     } catch (e) {
       _isLoading = false;
@@ -113,6 +122,20 @@ class AuthProvider extends ChangeNotifier {
   void clearError() {
     _errorMessage = null;
     notifyListeners();
+  }
+
+  /// Mengambil token FCM dari Firebase lalu mengirimkannya ke Backend.
+  /// Dipanggil otomatis setelah loginKandang() dan loginSales() berhasil.
+  Future<void> _submitFcmToken() async {
+    try {
+      final token = await FirebaseMessaging.instance.getToken();
+      if (token == null) return;
+      await _authRepository.submitFcmToken(token);
+      debugPrint('✅ FCM Token berhasil dikirim ke Backend.');
+    } catch (e) {
+      // Tidak throw agar tidak menganggu flow login
+      debugPrint('⚠️ Gagal submit FCM token: $e');
+    }
   }
 
   /// Mengubah error dari Dio/Exception menjadi pesan yang ramah pengguna.

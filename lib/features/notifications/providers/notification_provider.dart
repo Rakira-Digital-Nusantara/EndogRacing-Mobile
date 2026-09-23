@@ -1,13 +1,21 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../../../core/network/dio_client.dart';
 
+/// Channel ID tunggal yang digunakan di seluruh aplikasi.
+/// Harus sama dengan nilai di AndroidManifest.xml dan main.dart.
+const String kNotificationChannelId = 'high_importance_channel';
+
 class NotificationProvider extends ChangeNotifier {
   final DioClient _dioClient;
   final FlutterLocalNotificationsPlugin _localNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
+
+  /// Callback opsional untuk navigasi saat notifikasi diklik.
+  /// Di-set dari luar (misal: di main.dart setelah router dibuat).
+  void Function(String route)? onNotificationTap;
 
   NotificationProvider(this._dioClient);
 
@@ -29,7 +37,6 @@ class NotificationProvider extends ChangeNotifier {
       if (response.statusCode == 200) {
         final data = response.data;
         if (data is Map) {
-          // Coba ambil dari root, kalau tidak ada coba cari di dalam 'data'
           final countVal = data['unread_count'] ?? (data['data'] != null && data['data'] is Map ? data['data']['unread_count'] : null);
           _unreadCount = int.tryParse(countVal.toString()) ?? 0;
         } else {
@@ -86,7 +93,6 @@ class NotificationProvider extends ChangeNotifier {
     try {
       final response = await _dioClient.dio.post('/notifications/$id/read');
       if (response.statusCode == 200) {
-        // Update local state
         final index = _notifications.indexWhere((n) => n['id'] == id);
         if (index != -1) {
           _notifications[index]['read_at'] = DateTime.now().toIso8601String();
@@ -122,6 +128,8 @@ class NotificationProvider extends ChangeNotifier {
     }
   }
 
+  /// [DEPRECATED] Sudah dipindahkan ke AuthProvider._submitFcmToken().
+  /// Tetap ada untuk backward compatibility jika dipanggil dari tempat lain.
   Future<void> submitFcmToken(String token) async {
     try {
       final response = await _dioClient.dio.post(
@@ -136,95 +144,119 @@ class NotificationProvider extends ChangeNotifier {
     }
   }
 
+  /// Inisialisasi Firebase Messaging lengkap:
+  /// - Minta izin notifikasi (Android 13+ / iOS)
+  /// - Daftarkan channel Android dengan Importance.max (heads-up)
+  /// - Pasang listener foreground (onMessage)
+  /// - Pasang listener klik notifikasi (onMessageOpenedApp)
+  /// - Tangani notifikasi yang membuka app dari terminated state
   Future<void> initFirebaseMessaging() async {
     try {
       final messaging = FirebaseMessaging.instance;
 
-      // Request permission
+      // Minta izin notifikasi ke user
       await messaging.requestPermission(alert: true, badge: true, sound: true);
 
-      // Initialize Local Notifications
+      // Inisialisasi flutter_local_notifications
       const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
       const iosInit = DarwinInitializationSettings();
       const initSettings = InitializationSettings(
         android: androidInit,
         iOS: iosInit,
       );
-      await _localNotificationsPlugin.initialize(settings: initSettings);
+      await _localNotificationsPlugin.initialize(
+        settings: initSettings,
+        // Navigasi saat user klik notifikasi lokal (foreground pop-up)
+        onDidReceiveNotificationResponse: (NotificationResponse response) {
+          debugPrint('Local notification tapped: ${response.payload}');
+          onNotificationTap?.call('/notifications');
+        },
+      );
 
-      // Create High Importance Channel for Android Heads-Up Notifications
+      // Buat channel Android dengan Importance.max agar muncul sebagai heads-up
       const channel = AndroidNotificationChannel(
-        'high_importance_channel_v3',
+        kNotificationChannelId,          // ID konsisten di seluruh app
         'High Importance Notifications',
-        description: 'This channel is used for important notifications.',
+        description: 'Notifikasi penting dari Endog Racing.',
         importance: Importance.max,
       );
 
       await _localNotificationsPlugin
           .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin
-          >()
+              AndroidFlutterLocalNotificationsPlugin>()
           ?.createNotificationChannel(channel);
 
-      // Listen for foreground messages
+      // === FOREGROUND HANDLER ===
+      // Tampilkan pop-up saat aplikasi sedang aktif dibuka
       FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-        debugPrint('Got a message whilst in the foreground!');
-        debugPrint('Message data: ${message.data}');
+        debugPrint('📬 Foreground message received: ${message.messageId}');
 
-        if (message.notification != null) {
-          debugPrint(
-            'Message also contained a notification: ${message.notification}',
-          );
+        final notification = message.notification;
+        if (notification == null) return;
 
-          int notificationId = message.hashCode.abs();
-          if (notificationId > 2147483647) {
-            notificationId = notificationId % 2147483647;
-          }
-
-          _localNotificationsPlugin.show(
-            id: notificationId,
-            title: message.notification!.title,
-            body: message.notification!.body,
-            notificationDetails: NotificationDetails(
-              android: AndroidNotificationDetails(
-                channel.id,
-                channel.name,
-                channelDescription: channel.description,
-                importance: Importance.max,
-                priority: Priority.high,
-              ),
-              iOS: const DarwinNotificationDetails(
-                presentAlert: true,
-                presentBadge: true,
-                presentSound: true,
-              ),
-            ),
-          );
-
-          // Refresh unread count and notifications if user is currently looking at it
-          fetchUnreadCount();
-          fetchNotifications();
+        int notificationId = message.hashCode.abs();
+        if (notificationId > 2147483647) {
+          notificationId = notificationId % 2147483647;
         }
+
+        _localNotificationsPlugin.show(
+          id: notificationId,
+          title: notification.title,
+          body: notification.body,
+          notificationDetails: NotificationDetails(
+            android: AndroidNotificationDetails(
+              channel.id,
+              channel.name,
+              channelDescription: channel.description,
+              importance: Importance.max,
+              priority: Priority.high,
+              icon: '@mipmap/ic_launcher',
+            ),
+            iOS: const DarwinNotificationDetails(
+              presentAlert: true,
+              presentBadge: true,
+              presentSound: true,
+            ),
+          ),
+        );
+
+        // Perbarui badge count dan list notifikasi
+        fetchUnreadCount();
+        fetchNotifications();
       });
 
-      // Handle message open (background/terminated)
+      // === KLIK DARI BACKGROUND ===
+      // Saat user klik notifikasi dari status bar dan app sudah terbuka di background
       FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-        // Here you can navigate to the notification screen
-        debugPrint('Notification clicked!');
+        debugPrint('🔔 Notification tapped from background: ${message.messageId}');
+        onNotificationTap?.call('/notifications');
       });
 
-      // Get token
+      // === KLIK DARI TERMINATED ===
+      // Saat app dibuka pertama kali karena user klik notifikasi
+      final initialMessage = await messaging.getInitialMessage();
+      if (initialMessage != null) {
+        debugPrint('🚀 App opened from terminated via notification: ${initialMessage.messageId}');
+        // Delay sedikit agar router sudah siap sebelum navigate
+        Future.delayed(const Duration(milliseconds: 500), () {
+          onNotificationTap?.call('/notifications');
+        });
+      }
+
+      // Get dan kirim token FCM (sebagai backup, login sudah handle ini)
       final token = await messaging.getToken();
       if (token != null) {
         await submitFcmToken(token);
       }
 
-      // Listen for token refresh
+      // Perbarui token jika Firebase refresh
       messaging.onTokenRefresh.listen((newToken) {
+        debugPrint('🔄 FCM Token diperbarui: $newToken');
         submitFcmToken(newToken);
       });
+
     } catch (e) {
-      debugPrint('Error initializing Firebase Messaging: $e');
+      debugPrint('❌ Error initializing Firebase Messaging: $e');
     }
   }
 }

@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../../../../core/constants/api_endpoints.dart';
@@ -103,5 +103,14 @@ class AuthRepository {
       }
     }
     return null;
+  }
+
+  /// Mengirim FCM Token ke Backend agar server tahu alamat HP yang harus
+  /// ditembak notifikasinya. Dipanggil segera setelah login berhasil.
+  Future<void> submitFcmToken(String token) async {
+    await _dioClient.dio.post(
+      '/fcm-token',
+      data: {'fcm_token': token},
+    );
   }
 }
