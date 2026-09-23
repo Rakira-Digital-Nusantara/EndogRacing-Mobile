@@ -63,6 +63,7 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
             await context.read<SalesProvider>().fetchSalesDashboard(tanggal: dateStr);
             await context.read<SalesProvider>().fetchRekapHarian(tanggal: dateStr);
             await context.read<SalesProvider>().fetchSaldoBelumDisetor();
+            await context.read<NotificationProvider>().fetchUnreadCount();
           },
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),

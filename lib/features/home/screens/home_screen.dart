@@ -52,6 +52,7 @@ class _HomeScreenState extends State<HomeScreen> {
         child: RefreshIndicator(
           onRefresh: () async {
             await context.read<DashboardProvider>().fetchDashboardData(kandangCode);
+            await context.read<NotificationProvider>().fetchUnreadCount();
           },
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),

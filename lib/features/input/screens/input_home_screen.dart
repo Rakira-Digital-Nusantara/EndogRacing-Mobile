@@ -10,15 +10,17 @@ import '../../home/screens/main_screen.dart';
 class InputHomeScreen extends StatelessWidget {
   const InputHomeScreen({super.key});
 
-  void _handleMenuTap(BuildContext context, String route, bool isLocked) {
+  void _handleMenuTap(BuildContext context, String route, bool isLocked, bool isAbsenPulang) {
     if (isLocked) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Silakan Absen Masuk terlebih dahulu untuk menginput data.'),
+          content: Text(isAbsenPulang 
+              ? 'Anda sudah Absen Pulang hari ini. Tidak dapat menginput data.'
+              : 'Silakan Absen Masuk terlebih dahulu untuk menginput data.'),
           backgroundColor: Colors.red.shade600,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          action: SnackBarAction(
+          action: isAbsenPulang ? null : SnackBarAction(
             label: 'ABSEN',
             textColor: Colors.white,
             onPressed: () => context.push('/absensi'),
@@ -37,7 +39,8 @@ class InputHomeScreen extends StatelessWidget {
     
     // Check absensi status
     final isAbsenMasuk = context.watch<AbsensiProvider>().isSudahAbsenMasukHariIni;
-    final isLocked = !isAbsenMasuk;
+    final isAbsenPulang = context.watch<AbsensiProvider>().isSudahAbsenPulangHariIni;
+    final isLocked = !isAbsenMasuk || isAbsenPulang;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC), // Seragam dengan Beranda
@@ -79,7 +82,9 @@ class InputHomeScreen extends StatelessWidget {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Menu input data terkunci karena Anda belum Absen Masuk hari ini.',
+                        isAbsenPulang 
+                            ? 'Menu input data terkunci karena Anda sudah Absen Pulang hari ini.'
+                            : 'Menu input data terkunci karena Anda belum Absen Masuk hari ini.',
                         style: TextStyle(color: Colors.red.shade700, fontSize: 13, fontWeight: FontWeight.w500),
                       ),
                     ),
@@ -98,7 +103,7 @@ class InputHomeScreen extends StatelessWidget {
               actionText: isLocked ? 'TERKUNCI' : 'INPUT DATA',
               actionColor: isLocked ? Colors.grey.shade500 : const Color(0xFF2563EB),
               bgColor: isLocked ? Colors.grey.shade200 : const Color(0xFFEFF6FF), // Light blue
-              onTap: () => _handleMenuTap(context, '/input-pakan', isLocked),
+              onTap: () => _handleMenuTap(context, '/input-pakan', isLocked, isAbsenPulang),
             ),
             const SizedBox(height: 16),
 
@@ -112,7 +117,7 @@ class InputHomeScreen extends StatelessWidget {
               actionText: isLocked ? 'TERKUNCI' : 'MULAI CHECKLIST',
               actionColor: isLocked ? Colors.grey.shade500 : const Color(0xFF2563EB),
               bgColor: isLocked ? Colors.grey.shade200 : const Color(0xFFEFF6FF), // Light blue
-              onTap: () => _handleMenuTap(context, '/checklist-kebersihan', isLocked),
+              onTap: () => _handleMenuTap(context, '/checklist-kebersihan', isLocked, isAbsenPulang),
             ),
             const SizedBox(height: 16),
 
@@ -126,7 +131,7 @@ class InputHomeScreen extends StatelessWidget {
               actionText: isLocked ? 'TERKUNCI' : 'INPUT DATA',
               actionColor: isLocked ? Colors.grey.shade500 : const Color(0xFFD97706),
               bgColor: isLocked ? Colors.grey.shade200 : const Color(0xFFFFF7ED), // Light orange
-              onTap: () => _handleMenuTap(context, '/input-produksi', isLocked),
+              onTap: () => _handleMenuTap(context, '/input-produksi', isLocked, isAbsenPulang),
             ),
             const SizedBox(height: 16),
 
@@ -140,7 +145,7 @@ class InputHomeScreen extends StatelessWidget {
               actionText: isLocked ? 'TERKUNCI' : 'INPUT DATA',
               actionColor: isLocked ? Colors.grey.shade500 : const Color(0xFFDC2626),
               bgColor: isLocked ? Colors.grey.shade200 : const Color(0xFFFEF2F2), // Light red
-              onTap: () => _handleMenuTap(context, '/input-kematian', isLocked),
+              onTap: () => _handleMenuTap(context, '/input-kematian', isLocked, isAbsenPulang),
             ),
             const SizedBox(height: 16),
 
@@ -154,7 +159,7 @@ class InputHomeScreen extends StatelessWidget {
               actionText: isLocked ? 'TERKUNCI' : 'INPUT DATA',
               actionColor: isLocked ? Colors.grey.shade500 : const Color(0xFF059669),
               bgColor: isLocked ? Colors.grey.shade200 : const Color(0xFFECFDF5),
-              onTap: () => _handleMenuTap(context, '/input-ovk', isLocked),
+              onTap: () => _handleMenuTap(context, '/input-ovk', isLocked, isAbsenPulang),
             ),
             const SizedBox(height: 32),
           ],

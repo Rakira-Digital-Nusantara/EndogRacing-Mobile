@@ -171,6 +171,7 @@ class _AbsensiScreenState extends State<AbsensiScreen> {
 
   Widget _buildLocationStatus() {
     final hasLocation = _currentPosition != null;
+    final isSuccess = hasLocation && _isDalamArea;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -180,7 +181,7 @@ class _AbsensiScreenState extends State<AbsensiScreen> {
         border: Border.all(
           color: _isCheckingLocation
               ? Colors.grey.shade300
-              : (hasLocation ? Colors.green.shade200 : Colors.red.shade200),
+              : (isSuccess ? Colors.green.shade200 : Colors.red.shade200),
         ),
       ),
       child: Column(
@@ -224,14 +225,14 @@ class _AbsensiScreenState extends State<AbsensiScreen> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: hasLocation
+                    color: isSuccess
                         ? Colors.green.withOpacity(0.1)
                         : Colors.red.withOpacity(0.1),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
-                    hasLocation ? Icons.check_circle : Icons.cancel,
-                    color: hasLocation ? Colors.green : Colors.red,
+                    isSuccess ? Icons.check_circle : Icons.cancel,
+                    color: isSuccess ? Colors.green : Colors.red,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -243,7 +244,7 @@ class _AbsensiScreenState extends State<AbsensiScreen> {
                         _locationMessage,
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          color: hasLocation
+                          color: isSuccess
                               ? Colors.green.shade700
                               : Colors.red.shade700,
                           fontSize: 16,
@@ -285,9 +286,9 @@ class _AbsensiScreenState extends State<AbsensiScreen> {
             ],
           ),
           const SizedBox(height: 12),
-          _buildTimeRow('Masuk', '06:00 – 08:00'),
+          _buildTimeRow('Masuk', '06:00 – 15:59'),
           const SizedBox(height: 8),
-          _buildTimeRow('Pulang', '15:00 – 17:00'),
+          _buildTimeRow('Pulang', '16:00 – 23:59'),
           const Divider(height: 24),
           Text(
             'Waktu saat ini: ${DateFormat('HH:mm').format(DateTime.now())} WIB',

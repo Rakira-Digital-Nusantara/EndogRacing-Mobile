@@ -101,6 +101,32 @@ class AbsensiProvider extends ChangeNotifier {
 
     try {
       final tipe = forcedTipeAbsen ?? nextAbsenType;
+
+      // Validasi jam sesuai aturan API (tapi menggunakan jam lokal HP agar akurat)
+      final now = DateTime.now();
+      final currentHour = now.hour;
+
+      if (tipe.toLowerCase() == 'masuk') {
+        if (currentHour < 6) {
+          _errorMessage = "Gagal, belum waktunya masuk. Jam masuk minimal adalah 06:00";
+          _isLoading = false;
+          notifyListeners();
+          return false;
+        } else if (currentHour >= 16) {
+          _errorMessage = "Gagal, batas waktu absen masuk sudah lewat (Maksimal 15:59).";
+          _isLoading = false;
+          notifyListeners();
+          return false;
+        }
+      } else if (tipe.toLowerCase() == 'pulang') {
+        if (currentHour < 16) {
+          _errorMessage = "Gagal, belum waktunya pulang. Jam pulang minimal adalah 16:00";
+          _isLoading = false;
+          notifyListeners();
+          return false;
+        }
+      }
+
       await _repository.submitAbsensi(
         tipeAbsen: tipe,
         photoPath: photoPath,

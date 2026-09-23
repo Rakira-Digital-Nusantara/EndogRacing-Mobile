@@ -27,7 +27,14 @@ class NotificationProvider extends ChangeNotifier {
     try {
       final response = await _dioClient.dio.get('/notifications/unread-count');
       if (response.statusCode == 200) {
-        _unreadCount = response.data['unread_count'] ?? 0;
+        final data = response.data;
+        if (data is Map) {
+          // Coba ambil dari root, kalau tidak ada coba cari di dalam 'data'
+          final countVal = data['unread_count'] ?? (data['data'] != null && data['data'] is Map ? data['data']['unread_count'] : null);
+          _unreadCount = int.tryParse(countVal.toString()) ?? 0;
+        } else {
+          _unreadCount = 0;
+        }
         notifyListeners();
       }
     } catch (e) {
@@ -147,7 +154,7 @@ class NotificationProvider extends ChangeNotifier {
 
       // Create High Importance Channel for Android Heads-Up Notifications
       const channel = AndroidNotificationChannel(
-        'high_importance_channel_v2',
+        'high_importance_channel_v3',
         'High Importance Notifications',
         description: 'This channel is used for important notifications.',
         importance: Importance.max,
