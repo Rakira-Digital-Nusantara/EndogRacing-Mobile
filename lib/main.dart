@@ -28,13 +28,20 @@ import 'features/absensi/providers/absensi_provider.dart';
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
-  debugPrint("📬 Background message received: ${message.messageId}");
+  debugPrint("ðŸ“¬ Background message received: ${message.messageId}");
 
   String? title = message.notification?.title ?? message.data['title'] ?? 'Notifikasi Baru';
   String? body = message.notification?.body ?? message.data['body'] ?? message.data['message'] ?? 'Anda memiliki pesan baru';
 
   int notificationId = message.hashCode.abs();
   if (notificationId > 2147483647) notificationId = notificationId % 2147483647;
+
+  // Jika ini adalah pesan notifikasi, OS (Google Play Services) 
+  // sudah menampilkannya secara otomatis. Jangan tampilkan ulang!
+  if (message.notification != null) {
+    debugPrint("📬 Pesan Notifikasi sudah ditangani oleh Android OS.");
+    return;
+  }
 
   final FlutterLocalNotificationsPlugin localNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
@@ -49,6 +56,8 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
     'High Importance Notifications',
     description: 'Notifikasi penting dari Endog Racing.',
     importance: Importance.max,
+    enableVibration: true,
+    playSound: true,
   );
 
   await localNotificationsPlugin
@@ -66,6 +75,8 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
         channelDescription: channel.description,
         importance: Importance.max,
         priority: Priority.high,
+        enableVibration: true,
+        playSound: true,
       ),
       iOS: const DarwinNotificationDetails(
         presentAlert: true,

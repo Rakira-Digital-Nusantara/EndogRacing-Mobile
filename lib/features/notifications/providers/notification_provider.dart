@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -6,7 +7,7 @@ import '../../../core/network/dio_client.dart';
 
 /// Channel ID tunggal yang digunakan di seluruh aplikasi.
 /// Harus sama dengan nilai di AndroidManifest.xml dan main.dart.
-const String kNotificationChannelId = 'high_importance_channel';
+const String kNotificationChannelId = 'high_importance_channel_v5';
 
 class NotificationProvider extends ChangeNotifier {
   final DioClient _dioClient;
@@ -144,6 +145,29 @@ class NotificationProvider extends ChangeNotifier {
     }
   }
 
+  /// Fungsi Global untuk Navigasi (Routing) berdasarkan "type" notifikasi
+  void _handleRouting(Map<String, dynamic> data) {
+    String type = data['type']?.toString() ?? '';
+    String id = data['id']?.toString() ?? '';
+    
+    // Ganti dengan logic Navigasi/Router Anda
+    switch (type) {
+      case 'PO_CREATED':
+        // Contoh: Navigasi ke detail PO
+        // onNotificationTap?.call('/po-detail/$id');
+        onNotificationTap?.call('/notifications');
+        break;
+      case 'PAYMENT_RECEIVED':
+        // Contoh: Navigasi ke detail pembayaran
+        onNotificationTap?.call('/notifications');
+        break;
+      default:
+        // Navigasi ke halaman beranda/notifikasi list
+        onNotificationTap?.call('/notifications');
+        break;
+    }
+  }
+
   /// Inisialisasi Firebase Messaging lengkap:
   /// - Minta izin notifikasi (Android 13+ / iOS)
   /// - Daftarkan channel Android dengan Importance.max (heads-up)
@@ -169,9 +193,29 @@ class NotificationProvider extends ChangeNotifier {
         // Navigasi saat user klik notifikasi lokal (foreground pop-up)
         onDidReceiveNotificationResponse: (NotificationResponse response) {
           debugPrint('Local notification tapped: ${response.payload}');
-          onNotificationTap?.call('/notifications');
+          if (response.payload != null) {
+            try {
+              final data = jsonDecode(response.payload!);
+              if (data is Map<String, dynamic>) {
+                _handleRouting(data);
+              } else {
+                _handleRouting({});
+              }
+            } catch (e) {
+              _handleRouting({});
+            }
+          } else {
+            _handleRouting({});
+          }
         },
       );
+
+      final androidImplementation = _localNotificationsPlugin
+          .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>();
+      if (androidImplementation != null) {
+        await androidImplementation.requestNotificationsPermission();
+      }
 
       // Buat channel Android dengan Importance.max agar muncul sebagai heads-up
       const channel = AndroidNotificationChannel(
@@ -179,6 +223,8 @@ class NotificationProvider extends ChangeNotifier {
         'High Importance Notifications',
         description: 'Notifikasi penting dari Endog Racing.',
         importance: Importance.max,
+        enableVibration: true,
+        playSound: true,
       );
 
       await _localNotificationsPlugin
@@ -191,8 +237,8 @@ class NotificationProvider extends ChangeNotifier {
       FirebaseMessaging.onMessage.listen((RemoteMessage message) {
         debugPrint('📬 Foreground message received: ${message.messageId}');
 
-        final notification = message.notification;
-        if (notification == null) return;
+        String? title = message.notification?.title ?? message.data['title'] ?? 'Notifikasi Baru';
+        String? body = message.notification?.body ?? message.data['body'] ?? message.data['message'] ?? 'Anda memiliki pesan baru';
 
         int notificationId = message.hashCode.abs();
         if (notificationId > 2147483647) {
@@ -201,8 +247,8 @@ class NotificationProvider extends ChangeNotifier {
 
         _localNotificationsPlugin.show(
           id: notificationId,
-          title: notification.title,
-          body: notification.body,
+          title: title,
+          body: body,
           notificationDetails: NotificationDetails(
             android: AndroidNotificationDetails(
               channel.id,
@@ -210,6 +256,8 @@ class NotificationProvider extends ChangeNotifier {
               channelDescription: channel.description,
               importance: Importance.max,
               priority: Priority.high,
+              enableVibration: true,
+              playSound: true,
               icon: '@mipmap/ic_launcher',
             ),
             iOS: const DarwinNotificationDetails(
@@ -218,6 +266,7 @@ class NotificationProvider extends ChangeNotifier {
               presentSound: true,
             ),
           ),
+          payload: jsonEncode(message.data),
         );
 
         // Perbarui badge count dan list notifikasi
@@ -229,7 +278,7 @@ class NotificationProvider extends ChangeNotifier {
       // Saat user klik notifikasi dari status bar dan app sudah terbuka di background
       FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
         debugPrint('🔔 Notification tapped from background: ${message.messageId}');
-        onNotificationTap?.call('/notifications');
+        _handleRouting(message.data);
       });
 
       // === KLIK DARI TERMINATED ===
@@ -239,7 +288,7 @@ class NotificationProvider extends ChangeNotifier {
         debugPrint('🚀 App opened from terminated via notification: ${initialMessage.messageId}');
         // Delay sedikit agar router sudah siap sebelum navigate
         Future.delayed(const Duration(milliseconds: 500), () {
-          onNotificationTap?.call('/notifications');
+          _handleRouting(initialMessage.data);
         });
       }
 
