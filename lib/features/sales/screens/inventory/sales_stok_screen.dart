@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:endog_racing/core/constants/app_colors.dart';
-import 'package:endog_racing/features/auth/providers/auth_provider.dart';
 import 'package:endog_racing/features/sales/providers/sales_provider.dart';
 import 'package:endog_racing/core/utils/currency_formatter.dart';
 import 'package:endog_racing/shared/widgets/notification_bell.dart';
@@ -31,7 +30,6 @@ class _SalesStokScreenState extends State<SalesStokScreen> {
   @override
   Widget build(BuildContext context) {
     final sales = context.watch<SalesProvider>();
-    final auth = context.watch<AuthProvider>();
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC), // Cool off-white matching Kandang
@@ -349,7 +347,7 @@ class _SalesStokScreenState extends State<SalesStokScreen> {
                     unit: unitStr,
                     isPositive: isPositive,
                   );
-                }).toList(),
+                }),
             ],
           ),
         ),

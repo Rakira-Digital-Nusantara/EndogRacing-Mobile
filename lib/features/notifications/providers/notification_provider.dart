@@ -150,7 +150,7 @@ class NotificationProvider extends ChangeNotifier {
   /// Fungsi Global untuk Navigasi (Routing) berdasarkan "type" notifikasi
   void _handleRouting(Map<String, dynamic> data) {
     String type = data['type']?.toString() ?? '';
-    String id = data['id']?.toString() ?? '';
+    // String id = data['id']?.toString() ?? ''; // Uncomment if needed for routing
     
     // Ganti dengan logic Navigasi/Router Anda
     switch (type) {

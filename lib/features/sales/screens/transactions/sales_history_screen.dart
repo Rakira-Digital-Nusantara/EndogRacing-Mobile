@@ -1,13 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:endog_racing/core/utils/currency_formatter.dart';
 import 'package:endog_racing/core/constants/app_colors.dart';
-import 'package:endog_racing/features/auth/providers/auth_provider.dart';
 import 'package:endog_racing/features/sales/providers/sales_provider.dart';
-import 'package:endog_racing/features/sales/utils/sales_notification_dialog.dart';
 import 'package:endog_racing/shared/widgets/notification_bell.dart';
 import 'package:endog_racing/features/sales/screens/transactions/input_penjualan_screen.dart';
 import 'package:endog_racing/features/sales/screens/transactions/retur_tukar_screen.dart';
@@ -60,8 +56,6 @@ class _SalesHistoryScreenState extends State<SalesHistoryScreen> {
   Widget build(BuildContext context) {
     final sales = context.watch<SalesProvider>();
     final history = sales.salesHistory;
-    final auth = context.watch<AuthProvider>();
-    final userFoto = auth.user?.foto;
 
     List<Map<String, dynamic>> filteredHistory = history;
 
