@@ -221,10 +221,10 @@ class _HutangBarangScreenState extends State<HutangBarangScreen> with SingleTick
                       itemCount: sales.hutangBarangPending.length,
                       itemBuilder: (context, index) {
                         final item = sales.hutangBarangPending[index];
-                        final customerName = item['customer_name'] ?? 'Pelanggan';
-                        final date = item['tanggal'] ?? '-';
-                        final qty = item['total_hutang_kg'] ?? 0.0;
-                        final code = item['retur_code'] ?? '';
+                        final customerName = item['customer_name']?.toString() ?? 'Pelanggan';
+                        final date = item['tanggal']?.toString() ?? '-';
+                        final qty = (item['total_hutang_kg'] as num?)?.toDouble() ?? 0.0;
+                        final code = item['retur_code']?.toString() ?? '';
 
                         // Staggered animation
                         final animation = Tween<double>(begin: 0.0, end: 1.0).animate(

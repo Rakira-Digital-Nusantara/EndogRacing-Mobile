@@ -54,6 +54,8 @@ class _HomeScreenState extends State<HomeScreen> {
             await context.read<DashboardProvider>().fetchDashboardData(kandangCode);
             if (!mounted) return;
             await context.read<NotificationProvider>().fetchUnreadCount();
+            if (!mounted) return;
+            await context.read<AbsensiProvider>().fetchHistory();
           },
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),

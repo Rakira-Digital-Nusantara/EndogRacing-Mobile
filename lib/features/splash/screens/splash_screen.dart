@@ -2,6 +2,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:provider/provider.dart';
+import '../../update/providers/update_provider.dart';
+import '../../update/widgets/update_dialog.dart';
+
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -13,12 +17,27 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    // Simulasi loading 4 detik sebelum masuk ke role selection
-    Timer(const Duration(seconds: 4), () {
-      if (mounted) {
-        context.go('/role-selection');
-      }
-    });
+    _checkUpdateAndNavigate();
+  }
+
+  Future<void> _checkUpdateAndNavigate() async {
+    final startTime = DateTime.now();
+
+    final updateProvider = context.read<UpdateProvider>();
+    await updateProvider.checkForUpdate();
+
+    if (updateProvider.hasUpdate && mounted) {
+      await UpdateDialog.show(context);
+    }
+
+    final elapsed = DateTime.now().difference(startTime);
+    if (elapsed.inSeconds < 4) {
+      await Future.delayed(Duration(seconds: 4 - elapsed.inSeconds));
+    }
+
+    if (mounted) {
+      context.go('/role-selection');
+    }
   }
 
   @override

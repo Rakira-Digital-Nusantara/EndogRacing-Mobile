@@ -4,6 +4,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../auth/providers/auth_provider.dart';
 import 'package:endog_racing/shared/widgets/notification_bell.dart';
 import '../../kandang/screens/kandang_activity_screen.dart';
+import '../../absensi/providers/absensi_provider.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -313,6 +314,7 @@ class ProfileScreen extends StatelessWidget {
                       );
 
                       if (confirm == true && context.mounted) {
+                        context.read<AbsensiProvider>().clearHistory();
                         await authProvider.logout();
                       }
                     },

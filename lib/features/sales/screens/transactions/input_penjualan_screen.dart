@@ -105,10 +105,10 @@ class _InputPenjualanScreenState extends State<InputPenjualanScreen> {
       'customer_code': _selectedCustomerCode,
       'tanggal': DateTime.now().toIso8601String().split('T')[0],
       'opsi_bayar': _paymentMethod,
-      if (_paymentMethod == 'Sebagian')
-        'nominal_dibayar': uangDiterima,
+      'nominal_dibayar': uangDiterima,
       if ((_paymentMethod == 'Sebagian' || _paymentMethod == 'Belum Bayar') && _jatuhTempoDate != null)
         'tgl_jatuh_tempo': _jatuhTempoDate!.toIso8601String().split('T')[0],
+      'catatan': _keteranganCtrl.text,
       'details_jual': [
         {
           'sku_product': _selectedProductSku,

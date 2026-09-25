@@ -23,5 +23,5 @@ class ApiEndpoints {
   static const String me = '/me'; // GET data user yang sedang login
 
   // === Versi & Update ===
-  static const String checkVersion = '/check-version';
+  static const String checkVersion = '/check-update';
 }

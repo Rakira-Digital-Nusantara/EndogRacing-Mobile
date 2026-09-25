@@ -4,6 +4,8 @@ import 'package:dio/dio.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../../../core/network/dio_client.dart';
+import '../../../app/router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// Channel ID tunggal yang digunakan di seluruh aplikasi.
 /// Harus sama dengan nilai di AndroidManifest.xml dan main.dart.
@@ -160,6 +162,40 @@ class NotificationProvider extends ChangeNotifier {
       case 'PAYMENT_RECEIVED':
         // Contoh: Navigasi ke detail pembayaran
         onNotificationTap?.call('/notifications');
+        break;
+      case 'APP_UPDATE':
+        final currentContext = rootNavigatorKey.currentContext;
+        if (currentContext != null) {
+          showDialog(
+            context: currentContext,
+            builder: (ctx) => AlertDialog(
+              title: const Text('Update Aplikasi Tersedia', style: TextStyle(fontWeight: FontWeight.bold)),
+              content: Text(data['description']?.toString() ?? 'Terdapat update versi terbaru untuk aplikasi Anda.'),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('Nanti Saja', style: TextStyle(color: Colors.grey)),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    final url = data['download_url']?.toString() ?? '';
+                    if (url.isNotEmpty) {
+                      launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+                    }
+                    Navigator.pop(ctx);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF65A30D),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  child: const Text('Download Sekarang'),
+                ),
+              ],
+            ),
+          );
+        }
         break;
       default:
         // Navigasi ke halaman beranda/notifikasi list

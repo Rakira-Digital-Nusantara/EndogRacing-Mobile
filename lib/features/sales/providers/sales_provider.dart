@@ -150,7 +150,11 @@ class SalesProvider with ChangeNotifier {
           if (data.containsKey('errors')) {
             _error = data['errors'].toString();
           } else {
-            _error = data['message'] ?? 'Terjadi kesalahan server: $data';
+            _error = data['message']?.toString() ?? 'Terjadi kesalahan server';
+            final Map<String, dynamic> extraData = Map.from(data)..remove('message')..remove('exception');
+            if (extraData.isNotEmpty) {
+              _error += '\nDetail: $extraData';
+            }
           }
         } else {
           _error =

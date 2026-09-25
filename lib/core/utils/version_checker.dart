@@ -38,24 +38,25 @@ class VersionChecker {
   /// ```
   Future<UpdateInfo?> checkForUpdate() async {
     try {
-      // Ambil versi app yang sedang terinstall di HP pengguna
+      // Ambil versi_code app yang sedang terinstall di HP pengguna (buildNumber)
       final packageInfo = await PackageInfo.fromPlatform();
-      final currentVersion = packageInfo.version; // misal: "1.0.0"
+      final currentVersionCode = int.tryParse(packageInfo.buildNumber) ?? 0;
 
-      // Tanya ke server Laravel: versi terbaru berapa?
+      // Tanya ke server Laravel: versi_code terbaru berapa?
       final response = await _dioClient.dio.get(ApiEndpoints.checkVersion);
 
       if (response.statusCode == 200) {
         final data = response.data;
-        final latestVersion = data['latest_version'] as String;
+        final latestVersionCode = data['version_code'] is int ? data['version_code'] : int.tryParse(data['version_code'].toString()) ?? 0;
 
-        // Bandingkan versi saat ini dengan versi terbaru
-        if (_isNewerVersion(currentVersion, latestVersion)) {
+        // Bandingkan versi_code saat ini dengan versi_code terbaru
+        if (latestVersionCode > currentVersionCode) {
+          final force = data['is_force_update'] == 1 || data['is_force_update'] == true || data['is_force_update'] == '1';
           return UpdateInfo(
-            latestVersion: latestVersion,
-            downloadUrl: data['download_url'] as String,
-            forceUpdate: data['force_update'] as bool? ?? false,
-            changelog: data['changelog'] as String? ?? '',
+            latestVersion: latestVersionCode.toString(),
+            downloadUrl: data['download_url'] as String? ?? '',
+            forceUpdate: force,
+            changelog: data['description'] as String? ?? '',
           );
         }
       }
@@ -67,24 +68,7 @@ class VersionChecker {
     }
   }
 
-  /// Membandingkan dua versi dalam format "major.minor.patch".
-  /// Mengembalikan `true` jika [latest] lebih baru dari [current].
-  ///
-  /// Contoh:
-  /// - _isNewerVersion("1.0.0", "1.2.0") → true
-  /// - _isNewerVersion("1.2.0", "1.2.0") → false
-  bool _isNewerVersion(String current, String latest) {
-    final currentParts = current.split('.').map(int.parse).toList();
-    final latestParts = latest.split('.').map(int.parse).toList();
 
-    for (int i = 0; i < 3; i++) {
-      final c = i < currentParts.length ? currentParts[i] : 0;
-      final l = i < latestParts.length ? latestParts[i] : 0;
-      if (l > c) return true;
-      if (l < c) return false;
-    }
-    return false; // Versi sama
-  }
 
   /// Mendownload file APK dari [url] dan membuka installer Android.
   ///

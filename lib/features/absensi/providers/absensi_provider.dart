@@ -156,6 +156,11 @@ class AbsensiProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void clearHistory() {
+    _history.clear();
+    notifyListeners();
+  }
+
   String _parseError(DioException error) {
     if (error.response?.data != null && error.response?.data['message'] != null) {
       return error.response?.data['message'];

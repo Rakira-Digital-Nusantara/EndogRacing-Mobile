@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
 
 import 'package:intl/intl.dart';
@@ -20,10 +19,7 @@ class SalesAbsensiScreen extends StatefulWidget {
 }
 
 class _SalesAbsensiScreenState extends State<SalesAbsensiScreen> {
-  bool _isCheckingLocation = true;
   String? _photoPath;
-  Position? _currentPosition;
-  String _locationMessage = "Memeriksa lokasi...";
 
   @override
   void initState() {
@@ -32,94 +28,10 @@ class _SalesAbsensiScreenState extends State<SalesAbsensiScreen> {
       final provider = context.read<AbsensiProvider>();
       provider.setRole(true);
       provider.fetchHistory();
-      _checkLocation();
     });
   }
 
-  Future<void> _checkLocation() async {
-    setState(() {
-      _isCheckingLocation = true;
-      _locationMessage = "Mencari sinyal GPS...";
-    });
 
-    bool serviceEnabled;
-    LocationPermission permission;
-
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      setState(() {
-        _isCheckingLocation = false;
-        _locationMessage = "GPS tidak aktif";
-      });
-      return;
-    }
-
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        setState(() {
-          _isCheckingLocation = false;
-          _locationMessage = "Izin lokasi ditolak";
-        });
-        return;
-      }
-    }
-    
-    if (permission == LocationPermission.deniedForever) {
-      setState(() {
-        _isCheckingLocation = false;
-        _locationMessage = "Izin lokasi ditolak permanen";
-      });
-      return;
-    }
-
-    try {
-      Position position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
-      );
-      
-      if (position.isMocked) {
-        if (mounted) {
-          setState(() {
-            _locationMessage = "Fake GPS terdeteksi!";
-            _isCheckingLocation = false;
-            _currentPosition = null; // Disable button
-          });
-          showDialog(
-            context: context,
-            builder: (_) => AlertDialog(
-              title: const Text('Peringatan Keamanan'),
-              content: const Text('Anda terdeteksi menggunakan aplikasi Fake GPS. Harap matikan Fake GPS untuk melakukan absensi.'),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Mengerti'),
-                ),
-              ],
-            ),
-          );
-        }
-        return;
-      }
-      
-      if (mounted) {
-        setState(() {
-          _currentPosition = position;
-          
-          _locationMessage = "Area Sesuai";
-          _isCheckingLocation = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _locationMessage = "Gagal mendapat lokasi";
-          _isCheckingLocation = false;
-        });
-      }
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -142,8 +54,8 @@ class _SalesAbsensiScreenState extends State<SalesAbsensiScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 _buildHeaderInfo(),
-                const SizedBox(height: 20),
-                _buildLocationStatus(),
+                const SizedBox(height: 16),
+                _buildInfoBox(),
                 const SizedBox(height: 16),
                 _buildShiftSchedule(),
                 const SizedBox(height: 24),
@@ -188,76 +100,44 @@ class _SalesAbsensiScreenState extends State<SalesAbsensiScreen> {
     );
   }
 
-  Widget _buildLocationStatus() {
-    final hasLocation = _currentPosition != null;
-    
+  Widget _buildInfoBox() {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFFF8FAFC),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: _isCheckingLocation ? Colors.grey.shade300 : (hasLocation ? Colors.green.shade200 : Colors.red.shade200)),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
-      child: Column(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  const Icon(Icons.location_on, color: Colors.grey, size: 20),
-                  const SizedBox(width: 8),
-                  const Text('STATUS LOKASI', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
-                ],
-              ),
-              IconButton(
-                icon: const Icon(Icons.refresh, size: 20),
-                onPressed: _checkLocation,
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-              )
-            ],
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.amber.withValues(alpha: 0.15),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.lightbulb_outline_rounded, color: Color(0xFFD97706), size: 20),
           ),
-          const SizedBox(height: 12),
-          if (_isCheckingLocation)
-            const Center(child: Padding(padding: EdgeInsets.all(8.0), child: CircularProgressIndicator(strokeWidth: 2)))
-          else
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: hasLocation ? Colors.green.withValues(alpha: 0.1) : Colors.red.withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    hasLocation ? Icons.check_circle : Icons.cancel,
-                    color: hasLocation ? Colors.green : Colors.red,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        _locationMessage,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: hasLocation ? Colors.green.shade700 : Colors.red.shade700,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ],
-                  ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                Text('Catatan Absensi', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF334155), fontSize: 14)),
+                SizedBox(height: 6),
+                Text(
+                  'Harap melakukan absensi tepat waktu sesuai jadwal shift. Pastikan wajah Anda terlihat jelas saat mengambil foto selfie.',
+                  style: TextStyle(color: Color(0xFF475569), fontSize: 13, height: 1.5),
                 ),
               ],
             ),
+          ),
         ],
       ),
     );
   }
+
 
   Widget _buildShiftSchedule() {
     return Container(
@@ -347,7 +227,7 @@ class _SalesAbsensiScreenState extends State<SalesAbsensiScreen> {
   }
 
   Widget _buildSubmitButton(AbsensiProvider provider) {
-    final bool canSubmit = _currentPosition != null && _photoPath != null && !provider.isLoading;
+    final bool canSubmit = _photoPath != null && !provider.isLoading;
     final String nextType = widget.type.isNotEmpty 
         ? widget.type[0].toUpperCase() + widget.type.substring(1).toLowerCase() 
         : 'Masuk';
@@ -361,8 +241,8 @@ class _SalesAbsensiScreenState extends State<SalesAbsensiScreen> {
               final success = await provider.submitAbsensi(
                 forcedTipeAbsen: nextType,
                 photoPath: _photoPath!,
-                latitude: _currentPosition!.latitude,
-                longitude: _currentPosition!.longitude,
+                latitude: 0.0,
+                longitude: 0.0,
               );
 
               if (!mounted) return;

@@ -187,6 +187,16 @@ class _InputOvkScreenState extends State<InputOvkScreen> {
               } else {
                 errorMessage += '\n${data['errors']}';
               }
+            } else if (data.containsKey('error')) {
+              errorMessage += '\n${data['error']}';
+            } else {
+              // Extract other fields just in case backend sends the reason outside of 'message' / 'errors'
+              final Map<String, dynamic> remainingData = Map.from(data)..remove('message');
+              if (remainingData.isNotEmpty && !remainingData.containsKey('exception')) {
+                // We don't want to dump a huge Laravel stack trace if it's a 500 HTML exception,
+                // but if it's JSON with other keys, show them.
+                errorMessage += '\nDetail: $remainingData';
+              }
             }
           } else {
             errorMessage = 'Backend Response:\n${data.toString()}';
@@ -310,11 +320,11 @@ class _InputOvkScreenState extends State<InputOvkScreen> {
                                       ),
                                       const SizedBox(height: 12),
                                       
-                                      // Dropdown Produk
+                                      // Dropdown Kode SKU
                                       DropdownButtonFormField<String>(
                                         initialValue: row['sku_product'],
                                         isExpanded: true,
-                                        hint: const Text('Pilih Obat / Vaksin'),
+                                        hint: const Text('Pilih Kode SKU'),
                                         decoration: InputDecoration(
                                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                                           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -323,10 +333,9 @@ class _InputOvkScreenState extends State<InputOvkScreen> {
                                         ),
                                         items: _ovkItems.map<DropdownMenuItem<String>>((prod) {
                                           final sku = prod['sku_product']?.toString() ?? '';
-                                          final name = prod['sku_name']?.toString() ?? '';
                                           return DropdownMenuItem<String>(
                                             value: sku,
-                                            child: Text('$name ($sku)', style: const TextStyle(fontSize: 14)),
+                                            child: Text(sku, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
                                           );
                                         }).toList(),
                                         onChanged: (val) {
@@ -336,6 +345,39 @@ class _InputOvkScreenState extends State<InputOvkScreen> {
                                         },
                                       ),
                                       const SizedBox(height: 12),
+                                      
+                                      // Tabel / Box Nama Produk Otomatis
+                                      if (row['sku_product'] != null)
+                                        Container(
+                                          width: double.infinity,
+                                          padding: const EdgeInsets.all(12),
+                                          decoration: BoxDecoration(
+                                            color: Colors.blue.shade50,
+                                            borderRadius: BorderRadius.circular(8),
+                                            border: Border.all(color: Colors.blue.shade200),
+                                          ),
+                                          child: Row(
+                                            children: [
+                                              const Icon(Icons.info_outline, color: Colors.blue, size: 20),
+                                              const SizedBox(width: 8),
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  children: [
+                                                    const Text('Nama Obat / Vaksin', style: TextStyle(fontSize: 11, color: Colors.blue, fontWeight: FontWeight.bold)),
+                                                    const SizedBox(height: 2),
+                                                    Text(
+                                                      _ovkItems.firstWhere((item) => item['sku_product'] == row['sku_product'], orElse: () => {'sku_name': '-'})['sku_name']?.toString() ?? '-',
+                                                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      if (row['sku_product'] != null)
+                                        const SizedBox(height: 12),
                                       
                                       // Input Qty
                                       Row(
