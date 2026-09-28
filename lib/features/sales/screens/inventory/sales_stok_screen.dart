@@ -193,14 +193,6 @@ class _SalesStokScreenState extends State<SalesStokScreen> {
                                 ),
                               ),
                             ),
-                            Text(
-                              hargaSentral > 0 ? '${CurrencyFormatter.format(hargaSentral)}/kg' : '-',
-                              style: const TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.orange,
-                              ),
-                            ),
                           ],
                         ),
                       ),
