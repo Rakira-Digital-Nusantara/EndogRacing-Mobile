@@ -47,16 +47,17 @@ class VersionChecker {
 
       if (response.statusCode == 200) {
         final data = response.data;
-        final latestVersionCode = data['version_code'] is int ? data['version_code'] : int.tryParse(data['version_code'].toString()) ?? 0;
+        final responseData = data['data'];
+        final latestVersionCode = responseData['version_code'] is int ? responseData['version_code'] : int.tryParse(responseData['version_code'].toString()) ?? 0;
 
         // Bandingkan versi_code saat ini dengan versi_code terbaru
         if (latestVersionCode > currentVersionCode) {
-          final force = data['is_force_update'] == 1 || data['is_force_update'] == true || data['is_force_update'] == '1';
+          final force = responseData['is_force_update'] == 1 || responseData['is_force_update'] == true || responseData['is_force_update'] == '1';
           return UpdateInfo(
             latestVersion: latestVersionCode.toString(),
-            downloadUrl: data['download_url'] as String? ?? '',
+            downloadUrl: responseData['download_url'] as String? ?? '',
             forceUpdate: force,
-            changelog: data['description'] as String? ?? '',
+            changelog: responseData['description'] as String? ?? '',
           );
         }
       }
@@ -125,3 +126,4 @@ class UpdateInfo {
     required this.changelog,
   });
 }
+
