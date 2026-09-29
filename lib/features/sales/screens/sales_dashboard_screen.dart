@@ -18,7 +18,10 @@ class SalesDashboardScreen extends StatefulWidget {
   State<SalesDashboardScreen> createState() => _SalesDashboardScreenState();
 }
 
-class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
+import '../../../update/providers/update_provider.dart';
+import '../../../update/widgets/update_dialog.dart';
+
+class _SalesDashboardScreenState extends State<SalesDashboardScreen> with WidgetsBindingObserver {
   DateTime? _selectedDate;
   int _currentHargaPage = 0;
 
@@ -936,3 +939,4 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
     );
   }
 }
+

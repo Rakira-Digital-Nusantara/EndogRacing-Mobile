@@ -15,7 +15,10 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+import '../../update/providers/update_provider.dart';
+import '../../update/widgets/update_dialog.dart';
+
+class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   DateTimeRange? _selectedDateRange;
 
   @override
@@ -588,3 +591,4 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
+
