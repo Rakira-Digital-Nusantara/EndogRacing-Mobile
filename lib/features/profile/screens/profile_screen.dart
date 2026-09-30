@@ -327,7 +327,7 @@ class ProfileScreen extends StatelessWidget {
               child: Column(
                 children: [
                   const Text(
-                    'Versi Aplikasi 3.0.1',
+                    'Versi Aplikasi 3.0.4',
                     style: TextStyle(
                       color: Colors.grey,
                       fontSize: 14,

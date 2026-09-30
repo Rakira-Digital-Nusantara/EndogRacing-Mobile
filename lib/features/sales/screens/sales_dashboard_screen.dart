@@ -8,8 +8,6 @@ import 'package:endog_racing/features/sales/screens/profile/sales_absensi_screen
 import 'package:endog_racing/features/sales/screens/transactions/hutang_barang_screen.dart';
 import 'package:endog_racing/features/notifications/providers/notification_provider.dart';
 import 'package:endog_racing/shared/widgets/notification_bell.dart';
-import '../../update/providers/update_provider.dart';
-import '../../update/widgets/update_dialog.dart';
 
 class SalesDashboardScreen extends StatefulWidget {
   final VoidCallback? onProfileTap;

@@ -5,7 +5,6 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../../../core/network/dio_client.dart';
 import '../../../app/router.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:provider/provider.dart';
 import '../../update/providers/update_provider.dart';
 import '../../update/widgets/update_dialog.dart';

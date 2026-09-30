@@ -16,7 +16,7 @@ import '../../app/router.dart';
 /// final response = await dioClient.dio.get('/me');
 /// ```
 class DioClient {
-  static const String baseUrl = 'https://api-endogracing.rakiradigital.com/api';
+  static const String baseUrl = 'https://api.endogracing.com/api';
   late final Dio dio;
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
   DioClient() {

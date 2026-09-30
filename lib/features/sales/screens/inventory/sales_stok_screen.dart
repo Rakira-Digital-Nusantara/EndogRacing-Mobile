@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:endog_racing/core/constants/app_colors.dart';
 import 'package:endog_racing/features/sales/providers/sales_provider.dart';
-import 'package:endog_racing/core/utils/currency_formatter.dart';
 import 'package:endog_racing/shared/widgets/notification_bell.dart';
 
 class SalesStokScreen extends StatefulWidget {
@@ -148,7 +147,6 @@ class _SalesStokScreenState extends State<SalesStokScreen> {
                         }).map((mobilItem) {
                   final sku = mobilItem['sku_product']?.toString() ?? '';
                   final nama = mobilItem['sku_name']?.toString() ?? '';
-                  final hargaSentral = double.tryParse(mobilItem['harga_sentral']?.toString() ?? '0') ?? 0;
                   
                   // Cari rincian_pusat dengan sku yang sama
                   Map<String, dynamic>? pusatItem;

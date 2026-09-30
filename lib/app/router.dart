@@ -21,6 +21,7 @@ import '../../features/sales/screens/inventory/sales_stok_history_screen.dart';
 import '../../features/sales/screens/transactions/rekap_penjualan_screen.dart';
 import '../../features/sales/screens/cash/riwayat_setoran_screen.dart';
 import '../../features/kandang/screens/kandang_activity_screen.dart';
+import '../../features/notifications/screens/notifications_screen.dart';
 /// Konfigurasi routing (navigasi) aplikasi menggunakan GoRouter.
 ///
 /// GoRouter adalah cara modern untuk mengatur perpindahan halaman
@@ -142,6 +143,11 @@ GoRouter createRouter(AuthProvider authProvider) {
         path: '/kandang/activity',
         name: 'kandang-activity',
         builder: (context, state) => const KandangActivityScreen(),
+      ),
+      GoRoute(
+        path: '/notifications',
+        name: 'notifications',
+        builder: (context, state) => const NotificationsScreen(),
       ),
       GoRoute(
         path: '/home',

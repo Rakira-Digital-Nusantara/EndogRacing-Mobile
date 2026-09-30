@@ -8,8 +8,6 @@ import 'main_screen.dart';
 import '../providers/dashboard_provider.dart';
 import '../../notifications/providers/notification_provider.dart';
 import 'package:endog_racing/shared/widgets/notification_bell.dart';
-import '../../update/providers/update_provider.dart';
-import '../../update/widgets/update_dialog.dart';
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -52,11 +50,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: () async {
-            if (!mounted) return;
+            if (!context.mounted) return;
             await context.read<DashboardProvider>().fetchDashboardData(kandangCode);
-            if (!mounted) return;
+            if (!context.mounted) return;
             await context.read<NotificationProvider>().fetchUnreadCount();
-            if (!mounted) return;
+            if (!context.mounted) return;
             await context.read<AbsensiProvider>().fetchHistory();
           },
           child: SingleChildScrollView(
