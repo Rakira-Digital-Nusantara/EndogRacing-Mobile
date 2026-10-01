@@ -274,8 +274,9 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> with Widget
                     Expanded(
                       child: _buildMetrikCard(
                         title: 'STOK GUDANG',
-                        value: sales.dashboardData?['stok_gudang']?.toString() ?? '0',
-                        subtitle: 'Kg ',
+                        value: sales.dashboardData?['stok_gudang_kas']?.toString() ?? '0',
+                        unit: 'Kas',
+                        subtitle: '(Sisa ${sales.dashboardData?['stok_gudang_sisa_kg']?.toString() ?? '0'} Kg)',
                         icon: Icons.warehouse_outlined,
                         bgColor: Colors.white,
                         borderColor: Colors.grey.shade200,
