@@ -109,7 +109,15 @@ class _ChecklistKebersihanScreenState extends State<ChecklistKebersihanScreen> {
             color: img.ColorRgb8(255, 0, 0) // Merah
           );
           
-          final watermarkedBytes = img.encodeJpg(decodedImage, quality: 80);
+          int quality = 85;
+          List<int> watermarkedBytes = img.encodeJpg(decodedImage, quality: quality);
+          
+          // Kompresi agar ukuran maksimal 1MB (1024 KB)
+          while (watermarkedBytes.length > 1024 * 1024 && quality > 15) {
+            quality -= 15;
+            watermarkedBytes = img.encodeJpg(decodedImage, quality: quality);
+          }
+          
           await File(photo.path).writeAsBytes(watermarkedBytes);
         }
 

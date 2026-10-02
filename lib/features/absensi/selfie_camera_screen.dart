@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:image/image.dart' as img;
 
 class SelfieCameraScreen extends StatefulWidget {
   const SelfieCameraScreen({super.key});
@@ -60,6 +62,23 @@ class _SelfieCameraScreenState extends State<SelfieCameraScreen> {
 
     try {
       final XFile picture = await _controller!.takePicture();
+      
+      // Kompresi agar ukuran maksimal 1MB (1024 KB)
+      final bytes = await File(picture.path).readAsBytes();
+      final decodedImage = img.decodeImage(bytes);
+      
+      if (decodedImage != null) {
+        int quality = 85;
+        List<int> compressedBytes = img.encodeJpg(decodedImage, quality: quality);
+        
+        while (compressedBytes.length > 1024 * 1024 && quality > 15) {
+          quality -= 15;
+          compressedBytes = img.encodeJpg(decodedImage, quality: quality);
+        }
+        
+        await File(picture.path).writeAsBytes(compressedBytes);
+      }
+
       // Mengembalikan path file gambar ke layar sebelumnya
       if (mounted) {
         Navigator.pop(context, picture.path);
