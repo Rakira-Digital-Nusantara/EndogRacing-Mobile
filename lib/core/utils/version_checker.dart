@@ -1,7 +1,9 @@
+import 'dart:io';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:dio/dio.dart';
 
 import '../network/dio_client.dart';
 import '../constants/api_endpoints.dart';
@@ -84,20 +86,20 @@ class VersionChecker {
     String url, {
     Function(int received, int total)? onProgress,
   }) async {
-    // Minta izin untuk menginstall dari sumber tidak dikenal
-    final installStatus = await Permission.requestInstallPackages.request();
-    if (!installStatus.isGranted) {
-      throw Exception(
-        'Izin instalasi dari sumber tidak dikenal belum diberikan.',
-      );
-    }
 
     // Tentukan lokasi penyimpanan file APK
-    final directory = await getTemporaryDirectory();
+    Directory directory;
+    if (Platform.isAndroid) {
+      directory = (await getExternalStorageDirectory()) ?? await getTemporaryDirectory();
+    } else {
+      directory = await getTemporaryDirectory();
+    }
     final filePath = '${directory.path}/app_update.apk';
 
-    // Download APK dari server
-    await _dioClient.dio.download(
+    // Gunakan instance Dio yang baru (tanpa interceptor) khusus untuk download
+    // Agar tidak terpengaruh oleh header Authorization yang bisa ditolak oleh S3/GitHub.
+    final dio = Dio();
+    await dio.download(
       url,
       filePath,
       onReceiveProgress: (received, total) {

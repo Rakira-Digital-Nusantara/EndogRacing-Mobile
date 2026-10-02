@@ -2,7 +2,7 @@ name: endog_racing
 description: "Endog Racing Mobile App"
 publish_to: "none"
 
-version: 3.0.5+8
+version: 1.0.1+2
 
 environment:
   sdk: ^3.8.1
