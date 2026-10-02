@@ -74,7 +74,10 @@ class SalesProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await _dioClient.dio.get('/penjualan/form');
+      final response = await _dioClient.dio.get(
+        '/penjualan/form',
+        queryParameters: {'_t': DateTime.now().millisecondsSinceEpoch},
+      );
       if (response.statusCode == 200) {
         final data = response.data['data'] ?? response.data;
         if (data is Map) {
@@ -822,7 +825,9 @@ class SalesProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final queryParams = <String, dynamic>{};
+      final queryParams = <String, dynamic>{
+        '_t': DateTime.now().millisecondsSinceEpoch, // Bypass cache
+      };
       if (tanggal != null && tanggal.isNotEmpty) {
         queryParams['tanggal'] = tanggal;
       }
