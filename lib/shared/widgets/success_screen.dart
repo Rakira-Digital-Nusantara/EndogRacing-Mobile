@@ -9,6 +9,8 @@ class SuccessDialog extends StatelessWidget {
   final VoidCallback? onSecondaryPressed;
   final String primaryButtonText;
   final String? secondaryButtonText;
+  final IconData? primaryIcon;
+  final IconData? secondaryIcon;
 
   const SuccessDialog({
     super.key,
@@ -19,10 +21,31 @@ class SuccessDialog extends StatelessWidget {
     this.onSecondaryPressed,
     this.primaryButtonText = 'Kembali ke Beranda',
     this.secondaryButtonText = 'Input Data Lainnya',
+    this.primaryIcon,
+    this.secondaryIcon,
   });
 
   @override
   Widget build(BuildContext context) {
+    // Resolve Icons
+    final IconData resolvedPrimaryIcon = primaryIcon ??
+        (primaryButtonText.toLowerCase().contains('beranda')
+            ? Icons.home_outlined
+            : primaryButtonText.toLowerCase().contains('setor')
+                ? Icons.local_shipping_outlined
+                : Icons.check_circle_outline);
+
+    IconData? resolvedSecondaryIcon = secondaryIcon;
+    if (secondaryIcon == null && secondaryButtonText != null) {
+      final text = secondaryButtonText!.toLowerCase();
+      if (text.contains('input') || text.contains('tambah')) {
+        resolvedSecondaryIcon = Icons.add_circle_outline;
+      } else {
+        // Jika tombol Selesai / Tutup, jangan tampilkan icon (+)
+        resolvedSecondaryIcon = null;
+      }
+    }
+
     return Dialog(
       backgroundColor: const Color(0xFFF6FAF7),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
@@ -149,7 +172,7 @@ class SuccessDialog extends StatelessWidget {
                 height: 48,
                 child: ElevatedButton.icon(
                   onPressed: onPrimaryPressed,
-                  icon: const Icon(Icons.home_outlined),
+                  icon: Icon(resolvedPrimaryIcon),
                   label: Text(primaryButtonText, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
@@ -163,14 +186,22 @@ class SuccessDialog extends StatelessWidget {
               // Secondary Button (Optional)
               if (onSecondaryPressed != null) ...[
                 const SizedBox(height: 12),
-                TextButton.icon(
-                  onPressed: onSecondaryPressed,
-                  icon: const Icon(Icons.add_circle_outline, color: AppColors.primaryDark),
-                  label: Text(
-                    secondaryButtonText ?? '',
-                    style: const TextStyle(fontSize: 15, color: AppColors.primaryDark, fontWeight: FontWeight.bold),
-                  ),
-                ),
+                resolvedSecondaryIcon != null
+                    ? TextButton.icon(
+                        onPressed: onSecondaryPressed,
+                        icon: Icon(resolvedSecondaryIcon, color: AppColors.primaryDark),
+                        label: Text(
+                          secondaryButtonText ?? '',
+                          style: const TextStyle(fontSize: 15, color: AppColors.primaryDark, fontWeight: FontWeight.bold),
+                        ),
+                      )
+                    : TextButton(
+                        onPressed: onSecondaryPressed,
+                        child: Text(
+                          secondaryButtonText ?? '',
+                          style: const TextStyle(fontSize: 15, color: AppColors.primaryDark, fontWeight: FontWeight.bold),
+                        ),
+                      ),
               ],
             ],
           ),

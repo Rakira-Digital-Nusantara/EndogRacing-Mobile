@@ -8,6 +8,8 @@ import 'main_screen.dart';
 import '../providers/dashboard_provider.dart';
 import '../../notifications/providers/notification_provider.dart';
 import 'package:endog_racing/shared/widgets/notification_bell.dart';
+import '../../kandang/providers/kandang_telur_provider.dart';
+import '../widgets/card_saldo_telur_kandang.dart';
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -27,7 +29,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       context.read<AbsensiProvider>().setRole(false);
       context.read<AbsensiProvider>().checkHistoryHariIni();
       final kandangCode = context.read<AuthProvider>().kandang?.kdgCode ?? '';
+      final todayStr = DateTime.now().toIso8601String().split('T')[0];
       context.read<DashboardProvider>().fetchDashboardData(kandangCode);
+      context.read<KandangTelurProvider>().fetchSaldoKandang(kandangCode);
+      context.read<KandangTelurProvider>().fetchDashboardSetor(kandangCode, startDate: todayStr, endDate: todayStr);
       
       // Initialize Firebase Messaging and unread count
       final notifProvider = context.read<NotificationProvider>();
@@ -51,7 +56,14 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         child: RefreshIndicator(
           onRefresh: () async {
             if (!context.mounted) return;
-            await context.read<DashboardProvider>().fetchDashboardData(kandangCode);
+            final String todayStr = DateTime.now().toIso8601String().split('T')[0];
+            final String startStr = _selectedDateRange?.start.toIso8601String().split('T')[0] ?? todayStr;
+            final String endStr = _selectedDateRange?.end.toIso8601String().split('T')[0] ?? todayStr;
+            await context.read<DashboardProvider>().fetchDashboardData(kandangCode, startDate: startStr, endDate: endStr);
+            if (!context.mounted) return;
+            await context.read<KandangTelurProvider>().fetchSaldoKandang(kandangCode);
+            if (!context.mounted) return;
+            await context.read<KandangTelurProvider>().fetchDashboardSetor(kandangCode, startDate: startStr, endDate: endStr);
             if (!context.mounted) return;
             await context.read<NotificationProvider>().fetchUnreadCount();
             if (!context.mounted) return;
@@ -86,6 +98,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 _buildCeklistRutin(context),
                 const SizedBox(height: 20),
                 _buildInputDataButton(context),
+                const SizedBox(height: 24),
+                const CardSaldoTelurKandang(),
                 const SizedBox(height: 32),
                 _buildMetrikSection(context),
                 const SizedBox(height: 40),
@@ -284,8 +298,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   Widget _buildMetrikSection(BuildContext context) {
-    final dashboardProvider = context.watch<DashboardProvider>();
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -343,7 +355,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                             _selectedDateRange = null;
                           });
                           final kdgCode = context.read<AuthProvider>().kandang?.kdgCode ?? '';
+                          final todayStr = DateTime.now().toIso8601String().split('T')[0];
                           context.read<DashboardProvider>().setFilter(kdgCode, 'harian');
+                          context.read<KandangTelurProvider>().fetchDashboardSetor(kdgCode, startDate: todayStr, endDate: todayStr);
                         },
                         child: Container(
                           padding: const EdgeInsets.all(4),
@@ -392,6 +406,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   final endStr = picked.end.toIso8601String().split('T')[0];
                   context.read<DashboardProvider>().setFilter(kdgCode, 'custom_date');
                   context.read<DashboardProvider>().fetchDashboardData(kdgCode, startDate: startStr, endDate: endStr);
+                  context.read<KandangTelurProvider>().fetchDashboardSetor(kdgCode, startDate: startStr, endDate: endStr);
                 }
               },
               borderRadius: BorderRadius.circular(12),
@@ -418,6 +433,26 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           ],
         ),
         const SizedBox(height: 16),
+        _buildMetrikGrid(context),
+      ],
+    );
+  }
+
+  Widget _buildMetrikGrid(BuildContext context) {
+    final dashboardProvider = context.watch<DashboardProvider>();
+    final kandangTelurProvider = context.watch<KandangTelurProvider>();
+
+    final bool isSetorLoading = dashboardProvider.isLoading || kandangTelurProvider.isLoadingDashboardSetor;
+    final String setorKgVal = dashboardProvider.telurSetorKgVal.isNotEmpty
+        ? dashboardProvider.telurSetorKgVal
+        : kandangTelurProvider.formatDashboardSetorKg;
+    final String setorKasVal = dashboardProvider.telurSetorKas.isNotEmpty
+        ? dashboardProvider.telurSetorKas
+        : kandangTelurProvider.formatDashboardSetorKas;
+
+    return Column(
+      children: [
+        // Baris 1: Pakan Terpakai & Sisa Stok Pakan
         Row(
           children: [
             Expanded(
@@ -446,14 +481,16 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           ],
         ),
         const SizedBox(height: 12),
+
+        // Baris 2: Produksi Telur (Panen Input ke Kandang) & Setor ke Gudang
         Row(
           children: [
             Expanded(
               child: _buildMetrikCard(
-                title: dashboardProvider.filter == 'harian' ? 'TELUR HARI INI' : 'PRODUKSI TELUR',
-                value: dashboardProvider.isLoading ? '...' : dashboardProvider.telurProduksiKas,
-                unit: 'Kas',
-                subtitle: dashboardProvider.isLoading ? null : dashboardProvider.telurProduksiKg,
+                title: 'PRODUKSI TELUR',
+                value: dashboardProvider.isLoading ? '...' : dashboardProvider.telurProduksiKgVal,
+                unit: 'kg',
+                subtitle: dashboardProvider.isLoading ? null : '${dashboardProvider.telurProduksiKas} Kas',
                 icon: Icons.egg_outlined,
                 bgColor: const Color(0xFFFFF7ED), // Orange
                 borderColor: const Color(0xFFF97316),
@@ -463,30 +500,34 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             const SizedBox(width: 12),
             Expanded(
               child: _buildMetrikCard(
-                title: 'TELUR RUSAK',
-                value: dashboardProvider.isLoading ? '...' : dashboardProvider.telurRusakKas,
-                unit: 'Kas',
-                subtitle: dashboardProvider.isLoading ? null : dashboardProvider.telurRusakKg,
-                icon: Icons.egg_alt_outlined, 
+                title: 'SETOR KE GUDANG',
+                value: isSetorLoading ? '...' : setorKgVal,
+                unit: 'kg',
+                subtitle: isSetorLoading ? null : '$setorKasVal Kas',
+                icon: Icons.local_shipping_outlined,
                 bgColor: const Color(0xFFFFF7ED), // Orange
                 borderColor: const Color(0xFFF97316),
-                iconColor: const Color(0xFFC2410C), 
+                iconColor: const Color(0xFFEA580C),
+                onTap: () => context.push('/riwayat-setor-telur'),
               ),
             ),
           ],
         ),
         const SizedBox(height: 12),
+
+        // Baris 3: Telur Rusak & Kematian Ayam
         Row(
           children: [
             Expanded(
               child: _buildMetrikCard(
-                title: 'TOTAL POPULASI',
-                value: dashboardProvider.isLoading ? '...' : dashboardProvider.totalPopulasi,
-                unit: 'ekor',
-                icon: Icons.pets_outlined, 
-                bgColor: const Color(0xFFFEF2F2), // Red
-                borderColor: const Color(0xFFEF4444),
-                iconColor: const Color(0xFFDC2626),
+                title: 'TELUR RUSAK',
+                value: dashboardProvider.isLoading ? '...' : dashboardProvider.telurRusakKgVal,
+                unit: 'kg',
+                subtitle: dashboardProvider.isLoading ? null : '${dashboardProvider.telurRusakKas} Kas',
+                icon: Icons.egg_alt_outlined, 
+                bgColor: const Color(0xFFFFF7ED), // Orange
+                borderColor: const Color(0xFFF97316),
+                iconColor: const Color(0xFFC2410C), 
               ),
             ),
             const SizedBox(width: 12),
@@ -495,10 +536,30 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 title: 'KEMATIAN',
                 value: dashboardProvider.isLoading ? '...' : dashboardProvider.kematian,
                 unit: 'ekor',
+                subtitle: dashboardProvider.isLoading ? null : 'Mortalitas ayam',
                 icon: Icons.warning_amber_rounded,
                 bgColor: const Color(0xFFFEF2F2), // Red
                 borderColor: const Color(0xFFEF4444),
                 iconColor: const Color(0xFFDC2626),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+
+        // Baris 4: Total Populasi Ayam Kandang
+        Row(
+          children: [
+            Expanded(
+              child: _buildMetrikCard(
+                title: 'TOTAL POPULASI',
+                value: dashboardProvider.isLoading ? '...' : dashboardProvider.totalPopulasi,
+                unit: 'ekor',
+                subtitle: dashboardProvider.isLoading ? null : 'Populasi ayam aktif di kandang',
+                icon: Icons.pets_outlined, 
+                bgColor: const Color(0xFFF8FAFC), // Cool Slate
+                borderColor: const Color(0xFF64748B),
+                iconColor: const Color(0xFF475569),
               ),
             ),
           ],
@@ -516,8 +577,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     Color? borderColor,
     Color? iconColor,
     String? subtitle,
+    VoidCallback? onTap,
   }) {
-    return Container(
+    final cardContent = Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: bgColor,
@@ -540,10 +602,16 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     letterSpacing: 0.8,
                     color: iconColor ?? Colors.grey.shade700,
                   ),
-                  maxLines: 2,
+                  maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
+              if (onTap != null)
+                Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: 10,
+                  color: (iconColor ?? Colors.grey.shade600).withValues(alpha: 0.6),
+                ),
             ],
           ),
           const SizedBox(height: 12),
@@ -586,6 +654,16 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         ],
       ),
     );
+
+    if (onTap != null) {
+      return InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: cardContent,
+      );
+    }
+
+    return cardContent;
   }
 }
 

@@ -135,6 +135,20 @@ class InputHomeScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
 
+            // Card: Setor Kas Telur ke Gudang
+            _buildMenuCard(
+              icon: Icons.local_shipping,
+              iconBgColor: isLocked ? Colors.grey.shade400 : const Color(0xFF16A34A), // Emerald Green
+              iconColor: Colors.white,
+              title: 'Setor Kas ke Gudang',
+              subtitle: 'Penyetoran telur ke gudang dalam satuan kas utuh (@ 15 Kg).',
+              actionText: isLocked ? 'TERKUNCI' : 'SETOR KAS',
+              actionColor: isLocked ? Colors.grey.shade500 : const Color(0xFF15803D),
+              bgColor: isLocked ? Colors.grey.shade200 : const Color(0xFFF0FDF4),
+              onTap: () => _handleMenuTap(context, '/setor-telur', isLocked, isAbsenPulang),
+            ),
+            const SizedBox(height: 16),
+
             // Card 4: Kematian & Afkir (Populasi)
             _buildMenuCard(
               icon: Icons.show_chart,

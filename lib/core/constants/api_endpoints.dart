@@ -24,4 +24,13 @@ class ApiEndpoints {
 
   // === Versi & Update ===
   static const String checkVersion = '/check-update';
+
+  // === Produksi & Panen Telur Kandang ===
+  static const String produksiTelur = '/produksi-telur';
+  static const String produksiTelurForm = '/produksi-telur/form';
+  static const String saldoTelurKandang = '/produksi-telur/saldo-kandang';
+
+  // === Setor Telur ke Gudang ===
+  static const String setorTelur = '/setor-telur';
+  static const String setorTelurForm = '/setor-telur/form';
 }

@@ -49,7 +49,7 @@ flowchart LR
 ---
 
 ### Layar 3: Form Setor Kas ke Gudang (`/api/setor-telur`)
-- **Pilihan Gudang Tujuan**: Dropdown Gudang (misal: *Gudang Pusat Telur*).
+- **Pilihan Gudang Tujuan**: Dropdown Gudang dikunci khusus **Gudang Pusat** (`GDG0001` - Gudang Pusat Telur). Mobile UI disarankan membuat dropdown ini langsung terpilih secara default atau berstatus read-only info, karena penyetoran telur dari kandang hanya diizinkan ke Gudang Pusat (gudang mobil sales ditolak oleh sistem).
 - **List Telur yang Bisa Disetor**:
   - Nama Produk: *Telur Ayam Negeri (Utuh)*
   - Saldo Tersedia di Kandang: `50.0 Kg`
@@ -197,12 +197,14 @@ Memuat daftar saldo kandang, jumlah Kas yang siap disetor, serta list gudang tuj
   "message": "Berhasil memuat form setor telur",
   "data": {
     "kandang": {
-      "kdg_code": "KDG-001",
-      "kdg_nama": "Kandang Flamboyan A"
+      "kdg_code": "0001",
+      "kdg_nama": "Kandang 1"
     },
+    "default_gudang_code": "GDG0001",
+    "default_gudang_nama": "Gudang Pusat",
     "saldo_kandang": [
       {
-        "sku_product": "TLR-001",
+        "sku_product": "1500123",
         "sku_name": "Telur Ayam Negeri",
         "kategori": "Utuh",
         "saldo_kg": 50.0,
@@ -213,14 +215,15 @@ Memuat daftar saldo kandang, jumlah Kas yang siap disetor, serta list gudang tuj
     ],
     "daftar_gudang": [
       {
-        "gudang_code": "GDG-001",
-        "gudang_nama": "Gudang Pusat Telur",
-        "gudang_tipe": "Gudang Telur"
+        "gudang_code": "GDG0001",
+        "gudang_nama": "Gudang Pusat",
+        "gudang_tipe": "Gudang Pusat"
       }
     ]
   }
 }
 ```
+*(Catatan: `daftar_gudang` diisi HANYA oleh Gudang Pusat `GDG0001` secara otomatis).*
 
 ---
 
@@ -231,13 +234,13 @@ Mengirim Kas utuh ke gudang. Saldo kandang dipotong sebesar ($\text{Kas} \times 
 - **Request Body (JSON)**:
 ```json
 {
-  "kdg_code": "KDG-001",
-  "gudang_code": "GDG-001",
+  "kdg_code": "0001",
+  "gudang_code": "GDG0001",
   "tanggal": "2026-10-14",
   "catatan": "Setor hasil panen pagi",
   "items": [
     {
-      "sku_product": "TLR-001",
+      "sku_product": "1500123",
       "kategori": "Utuh",
       "qty_kas": 3,
       "catatan": "3 Kas utuh @ 15 Kg"
@@ -245,6 +248,7 @@ Mengirim Kas utuh ke gudang. Saldo kandang dipotong sebesar ($\text{Kas} \times 
   ]
 }
 ```
+*(Tip Kompatibilitas: Backend memiliki auto-normalizer yang mendukung kode alias seperti `KDG-001`, `GDG-001`, `TLR-001`. Namun gudang tujuan haruslah Gudang Pusat).*
 - **Contoh Response (201 Created)**:
 ```json
 {

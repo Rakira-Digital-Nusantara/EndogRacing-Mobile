@@ -39,28 +39,60 @@ class DashboardProvider extends ChangeNotifier {
   String get pakanTerpakai => _dashboardData == null ? '-' : _formatNumber(_dashboardData!['metrik']['pakan_terpakai_kg']);
   
   String get telurProduksiKas {
-    if (_dashboardData == null) return '-';
+    if (_dashboardData == null || _dashboardData!['metrik'] == null) return '-';
     final metrik = _dashboardData!['metrik'];
+    if (metrik['telur_produksi_kas'] != null) return _formatNumber(metrik['telur_produksi_kas']);
     if (metrik['telur_hari_ini_kas'] != null) return _formatNumber(metrik['telur_hari_ini_kas']);
-    final kg = metrik['telur_hari_ini_kg'];
+    final kg = metrik['telur_produksi_kg'] ?? metrik['telur_hari_ini_kg'];
     if (kg == null) return '0';
-    double val = (kg is int) ? kg.toDouble() : (kg as double);
+    double val = (kg is int) ? kg.toDouble() : (kg is double ? kg : double.tryParse(kg.toString()) ?? 0.0);
     return _formatNumber((val / 15.0).floor());
   }
   
-  String get telurProduksiKg => _dashboardData == null ? '-' : '${_formatNumber(_dashboardData!['metrik']['telur_hari_ini_kg'])} kg';
+  String get telurProduksiKgVal {
+    if (_dashboardData == null || _dashboardData!['metrik'] == null) return '-';
+    final metrik = _dashboardData!['metrik'];
+    final kg = metrik['telur_produksi_kg'] ?? metrik['telur_hari_ini_kg'];
+    return _formatNumber(kg);
+  }
+  String get telurProduksiKg => _dashboardData == null ? '-' : '$telurProduksiKgVal kg';
+
+  String get telurSetorKas {
+    if (_dashboardData == null || _dashboardData!['metrik'] == null) return '';
+    final metrik = _dashboardData!['metrik'];
+    final kas = metrik['telur_setor_kas'] ?? metrik['setor_telur_kas'] ?? metrik['telur_disetor_kas'] ?? metrik['setor_kas'];
+    if (kas != null) return _formatNumber(kas);
+    final kg = metrik['telur_setor_kg'] ?? metrik['setor_telur_kg'] ?? metrik['telur_disetor_kg'] ?? metrik['setor_kg'];
+    if (kg != null) {
+      double val = (kg is num) ? kg.toDouble() : double.tryParse(kg.toString()) ?? 0.0;
+      return _formatNumber((val / 15.0).floor());
+    }
+    return '';
+  }
+
+  String get telurSetorKgVal {
+    if (_dashboardData == null || _dashboardData!['metrik'] == null) return '';
+    final metrik = _dashboardData!['metrik'];
+    final kg = metrik['telur_setor_kg'] ?? metrik['setor_telur_kg'] ?? metrik['telur_disetor_kg'] ?? metrik['setor_kg'];
+    if (kg != null) return _formatNumber(kg);
+    return '';
+  }
   
   String get telurRusakKas {
-    if (_dashboardData == null) return '-';
+    if (_dashboardData == null || _dashboardData!['metrik'] == null) return '-';
     final metrik = _dashboardData!['metrik'];
     if (metrik['telur_rusak_kas'] != null) return _formatNumber(metrik['telur_rusak_kas']);
     final kg = metrik['telur_rusak_kg'];
     if (kg == null) return '0';
-    double val = (kg is int) ? kg.toDouble() : (kg as double);
+    double val = (kg is int) ? kg.toDouble() : (kg is double ? kg : double.tryParse(kg.toString()) ?? 0.0);
     return _formatNumber((val / 15.0).floor());
   }
   
-  String get telurRusakKg => _dashboardData == null ? '-' : '${_formatNumber(_dashboardData!['metrik']['telur_rusak_kg'])} kg';
+  String get telurRusakKgVal {
+    if (_dashboardData == null || _dashboardData!['metrik'] == null) return '-';
+    return _formatNumber(_dashboardData!['metrik']['telur_rusak_kg']);
+  }
+  String get telurRusakKg => _dashboardData == null ? '-' : '$telurRusakKgVal kg';
   
   String get kematian => _dashboardData == null ? '-' : _formatNumber(_dashboardData!['metrik']['kematian_ekor']);
   String get totalPopulasi => _dashboardData == null ? '-' : _formatNumber(_dashboardData!['metrik']['total_populasi_ekor']);

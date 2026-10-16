@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -20,6 +20,8 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import 'features/kandang/data/repositories/kandang_repository.dart';
+import 'features/kandang/data/repositories/kandang_telur_repository.dart';
+import 'features/kandang/providers/kandang_telur_provider.dart';
 import 'features/absensi/data/repositories/absensi_repository.dart';
 import 'features/absensi/providers/absensi_provider.dart';
 
@@ -103,6 +105,7 @@ void main() async {
 
   final authRepository = AuthRepository(dioClient);
   final kandangRepository = KandangRepository(dioClient);
+  final kandangTelurRepository = KandangTelurRepository(dioClient);
   final absensiRepository = AbsensiRepository(dioClient);
   final versionChecker = VersionChecker(dioClient);
 
@@ -113,6 +116,7 @@ void main() async {
   final salesProvider = SalesProvider(dioClient);
   final customerProvider = CustomerProvider(dioClient);
   final notificationProvider = NotificationProvider(dioClient);
+  final kandangTelurProvider = KandangTelurProvider(kandangTelurRepository);
 
   final router = createRouter(authProvider);
 
@@ -137,7 +141,9 @@ void main() async {
         ChangeNotifierProvider.value(value: salesProvider),
         ChangeNotifierProvider.value(value: customerProvider),
         ChangeNotifierProvider.value(value: notificationProvider),
+        ChangeNotifierProvider.value(value: kandangTelurProvider),
         Provider.value(value: kandangRepository),
+        Provider.value(value: kandangTelurRepository),
       ],
       child: App(router: router),
     ),

@@ -1,4 +1,4 @@
-﻿import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 
 import '../../kandang/data/models/kandang_model.dart';
@@ -112,10 +112,24 @@ class AuthProvider extends ChangeNotifier {
     await _authRepository.logout();
 
     _user = null;
+    _kandang = null;
     _isLoggedIn = false;
     _isLoading = false;
     _errorMessage = null;
     notifyListeners(); // Beritahu UI: "User sudah logout."
+  }
+
+  /// Dipanggil otomatis saat sesi token expired (HTTP 401).
+  Future<void> handleSessionExpired() async {
+    _user = null;
+    _kandang = null;
+    _isLoggedIn = false;
+    _isLoading = false;
+    _errorMessage = 'Sesi telah berakhir. Silakan login kembali.';
+    try {
+      await _authRepository.clearLocalAuth();
+    } catch (_) {}
+    notifyListeners();
   }
 
   /// Menghapus pesan error (misal: setelah user menutup snackbar).

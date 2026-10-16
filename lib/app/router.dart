@@ -21,6 +21,9 @@ import '../../features/sales/screens/inventory/sales_stok_history_screen.dart';
 import '../../features/sales/screens/transactions/rekap_penjualan_screen.dart';
 import '../../features/sales/screens/cash/riwayat_setoran_screen.dart';
 import '../../features/kandang/screens/kandang_activity_screen.dart';
+import '../../features/kandang/screens/setor_kas_screen.dart';
+import '../../features/kandang/screens/detail_setor_telur_screen.dart';
+import '../../features/kandang/screens/riwayat_setor_telur_screen.dart';
 import '../../features/notifications/screens/notifications_screen.dart';
 /// Konfigurasi routing (navigasi) aplikasi menggunakan GoRouter.
 ///
@@ -190,6 +193,27 @@ GoRouter createRouter(AuthProvider authProvider) {
         name: 'input-ovk',
         builder: (context, state) {
           return const InputOvkScreen(); 
+        },
+      ),
+      GoRoute(
+        path: '/setor-telur',
+        name: 'setor-telur',
+        builder: (context, state) {
+          return const SetorKasScreen();
+        },
+      ),
+      GoRoute(
+        path: '/setor-telur-detail',
+        name: 'setor-telur-detail',
+        builder: (context, state) {
+          return DetailSetorTelurScreen(data: state.extra);
+        },
+      ),
+      GoRoute(
+        path: '/riwayat-setor-telur',
+        name: 'riwayat-setor-telur',
+        builder: (context, state) {
+          return const RiwayatSetorTelurScreen();
         },
       ),
     ],

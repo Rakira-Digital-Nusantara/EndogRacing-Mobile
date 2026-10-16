@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:dio/dio.dart';
@@ -6,6 +5,8 @@ import 'package:provider/provider.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/network/dio_client.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../home/providers/dashboard_provider.dart';
+import '../../kandang/providers/kandang_telur_provider.dart';
 import '../../../shared/widgets/success_screen.dart';
 import '../../../shared/widgets/kandang_header_card.dart';
 import '../../../shared/widgets/app_button.dart';
@@ -24,12 +25,16 @@ class _InputProduksiScreenState extends State<InputProduksiScreen> {
 
   String _skuUtuh = '1500123';
   String _skuRusak = '100001';
-
-  int _populasi = 0;
   String _gudangCode = 'GDG0001';
 
-  // Tab State
-  int _selectedTabIndex = 0; // 0 = Utuh, 1 = Rusak
+  int _populasi = 0;
+  DateTime _tanggalPanen = DateTime.now();
+
+  // Sisa kemarin di kandang (dari API /produksi-telur/form)
+  double _sisaTelurKemarinKg = 0.0;
+
+  // Tab State: 0 = Utuh, 1 = Rusak
+  int _selectedTabIndex = 0;
 
   // Input Data Utuh
   int _qtyUtuhButir = 0;
@@ -50,9 +55,9 @@ class _InputProduksiScreenState extends State<InputProduksiScreen> {
       _isLoadingForm = true;
       _formError = '';
     });
-    
+
     final kandangCode = context.read<AuthProvider>().kandang?.kdgCode ?? "KDG-001";
-    
+
     try {
       final response = await DioClient().dio.get('/produksi-telur/form?kdg_code=$kandangCode');
       if (response.statusCode == 200) {
@@ -60,41 +65,50 @@ class _InputProduksiScreenState extends State<InputProduksiScreen> {
         if (rawData is Map && rawData.containsKey('data')) {
           final innerData = rawData['data'];
           if (innerData is Map) {
+            // 1. Gudang Code
+            if (innerData.containsKey('gudang_code') && innerData['gudang_code'] != null) {
+              _gudangCode = innerData['gudang_code'].toString();
+            }
+
+            // 2. Populasi
             if (innerData.containsKey('populasi_ayam_saat_ini')) {
               setState(() {
                 _populasi = int.tryParse(innerData['populasi_ayam_saat_ini'].toString()) ?? 0;
               });
             }
-            if (innerData.containsKey('gudang_code')) {
-              _gudangCode = innerData['gudang_code']?.toString() ?? 'GDG0001';
+
+            // 3. Saldo Telur Kandang (Sisa Kemarin)
+            if (innerData.containsKey('saldo_telur_kandang') && innerData['saldo_telur_kandang'] is List) {
+              final List saldos = innerData['saldo_telur_kandang'];
+              for (var s in saldos) {
+                final kat = s['kategori']?.toString().toLowerCase() ?? '';
+                if (kat.contains('utuh')) {
+                  final saldoVal = (s['saldo_kg'] is num)
+                      ? (s['saldo_kg'] as num).toDouble()
+                      : double.tryParse(s['saldo_kg']?.toString() ?? '0') ?? 0.0;
+                  setState(() {
+                    _sisaTelurKemarinKg = saldoVal;
+                  });
+                  if (s['sku_product'] != null && s['sku_product'].toString().isNotEmpty) {
+                    _skuUtuh = s['sku_product'].toString();
+                  }
+                  break;
+                }
+              }
             }
-            if (innerData.containsKey('items')) {
-              // Extract SKU automatically based on name
+
+            // 4. SKU dari items
+            if (innerData.containsKey('items') && innerData['items'] is List) {
               final List items = innerData['items'];
               for (var item in items) {
                 final sku = item['sku_product']?.toString() ?? '';
                 final name = item['sku_name']?.toString().toLowerCase() ?? '';
-                if (name.contains('utuh')) {
+                if (name.contains('utuh') && sku.isNotEmpty) {
                   _skuUtuh = sku;
-                } else if (name.contains('rusak') || name.contains('bentes') || name.contains('retak') || name.contains('afkir')) {
+                } else if ((name.contains('rusak') || name.contains('bentes') || name.contains('retak') || name.contains('afkir')) && sku.isNotEmpty) {
                   _skuRusak = sku;
                 }
               }
-              // If we couldn't find them, default to the first two, or log them
-              if (_skuUtuh.isEmpty && items.isNotEmpty) {
-                _skuUtuh = items[0]['sku_product']?.toString() ?? '1500123';
-              } else if (_skuUtuh.isEmpty) {
-                _skuUtuh = '1500123';
-              }
-              if (_skuRusak.isEmpty && items.length > 1) {
-                _skuRusak = items[1]['sku_product']?.toString() ?? '100001';
-              } else if (_skuRusak.isEmpty) {
-                _skuRusak = '100001';
-              }
-            } else {
-               _skuUtuh = '1500123';
-               _skuRusak = '100001';
-               debugPrint("API TIDAK MENGEMBALIKAN ITEMS: $innerData");
             }
           }
         }
@@ -102,7 +116,7 @@ class _InputProduksiScreenState extends State<InputProduksiScreen> {
     } catch (e) {
       String errMsg = 'Gagal memuat form produksi';
       if (e is DioException) {
-        errMsg = e.response?.data?.toString() ?? e.message ?? errMsg;
+        errMsg = e.response?.data?['message']?.toString() ?? e.message ?? errMsg;
       }
       setState(() {
         _formError = errMsg;
@@ -134,57 +148,97 @@ class _InputProduksiScreenState extends State<InputProduksiScreen> {
     }
 
     if (details.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Isi Qty minimal pada salah satu telur!')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Isi Qty minimal pada salah satu telur!')),
+      );
       return;
     }
 
     setState(() => _isSubmitting = true);
-    
+
     final kandangCode = context.read<AuthProvider>().kandang?.kdgCode ?? "KDG-001";
 
     final payload = {
       "kdg_code": kandangCode,
-      "gudang_code": _gudangCode,
-      "tanggal": DateTime.now().toIso8601String().split('T')[0],
+      if (_gudangCode.isNotEmpty) "gudang_code": _gudangCode,
+      "tanggal": _tanggalPanen.toIso8601String().split('T')[0],
       "details": details,
     };
 
     try {
       final response = await DioClient().dio.post('/produksi-telur', data: payload);
-      
+
       if (!mounted) return;
       setState(() => _isSubmitting = false);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
+        // Refresh saldo di provider & dashboard
+        context.read<KandangTelurProvider>().fetchSaldoKandang(kandangCode);
+        context.read<DashboardProvider>().fetchDashboardData(kandangCode);
+
+        // Ambil info stok jika ada
+        String infoSubtitle = 'Data produksi panen telur telah dicatat ke stok kandang.';
+        int potensiKasBaru = ((_sisaTelurKemarinKg + _qtyUtuhKg) / 15.0).floor();
+
+        if (response.data is Map && response.data['stok_kandang_info'] is List) {
+          final List infoList = response.data['stok_kandang_info'];
+          if (infoList.isNotEmpty && infoList.first['label'] != null) {
+            infoSubtitle = infoList.first['label'].toString();
+          }
+        }
+
         showDialog(
           context: context,
-          builder: (context) => SuccessDialog(
-            title: 'Produksi Tersimpan',
-            subtitle: 'Data produksi telur telah berhasil dicatat.',
+          builder: (dialogContext) => SuccessDialog(
+            title: 'Panen Berhasil Disimpan',
+            subtitle: infoSubtitle,
             time: '${TimeOfDay.now().hour.toString().padLeft(2, '0')}:${TimeOfDay.now().minute.toString().padLeft(2, '0')} WIB',
-            primaryButtonText: 'Selesai',
+            primaryButtonText: potensiKasBaru > 0 ? 'Setor Kas ke Gudang Sekarang' : 'Selesai',
+            primaryIcon: potensiKasBaru > 0 ? Icons.local_shipping_outlined : Icons.check_circle_outline,
+            secondaryButtonText: potensiKasBaru > 0 ? 'Selesai' : null,
+            secondaryIcon: null,
             onPrimaryPressed: () {
-              Navigator.pop(context);
+              Navigator.pop(dialogContext);
+              if (potensiKasBaru > 0) {
+                // Navigasi langsung ke form setor kas
+                context.push('/setor-telur');
+              } else {
+                context.pop();
+              }
+            },
+            onSecondaryPressed: () {
+              Navigator.pop(dialogContext);
               context.pop();
             },
           ),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(response.data['message'] ?? 'Gagal menyimpan data'), backgroundColor: Colors.red)
+          SnackBar(
+            content: Text(response.data['message'] ?? 'Gagal menyimpan data'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     } on DioException catch (e) {
       if (!mounted) return;
       setState(() => _isSubmitting = false);
-      
+
       String errorMessage = 'Terjadi kesalahan koneksi';
       if (e.response != null && e.response?.data != null) {
         final data = e.response?.data;
-        if (data is Map && data.containsKey('message')) {
-          errorMessage = data['message'];
-          if (data.containsKey('errors')) {
-            errorMessage += '\n${data['errors']}';
+        if (data is Map) {
+          if (data.containsKey('errors') && data['errors'] != null) {
+            final errs = data['errors'];
+            if (errs is Map) {
+              errorMessage = errs.values.map((v) => v is List ? v.join(', ') : v.toString()).join('\n');
+            } else if (errs is List) {
+              errorMessage = errs.join('\n');
+            } else {
+              errorMessage = errs.toString();
+            }
+          } else if (data.containsKey('message')) {
+            errorMessage = data['message'].toString();
           }
         } else {
           errorMessage = 'Error ${e.response?.statusCode}: ${e.response?.statusMessage}';
@@ -192,13 +246,17 @@ class _InputProduksiScreenState extends State<InputProduksiScreen> {
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(errorMessage), backgroundColor: Colors.red, duration: const Duration(seconds: 10))
+        SnackBar(
+          content: Text(errorMessage),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 5),
+        ),
       );
     } catch (e) {
       if (!mounted) return;
       setState(() => _isSubmitting = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Terjadi kesalahan tidak terduga: $e'), backgroundColor: Colors.red)
+        SnackBar(content: Text('Terjadi kesalahan tidak terduga: $e'), backgroundColor: Colors.red),
       );
     }
   }
@@ -207,7 +265,7 @@ class _InputProduksiScreenState extends State<InputProduksiScreen> {
   Widget build(BuildContext context) {
     final kandangName = context.watch<AuthProvider>().kandang?.kdgNama ?? 'Kandang 1';
 
-    // Hitung persentase
+    // Hitung persentase produktivitas
     double produktivitas = 0.0;
     double rusak = 0.0;
 
@@ -215,6 +273,11 @@ class _InputProduksiScreenState extends State<InputProduksiScreen> {
       produktivitas = ((_qtyUtuhButir + _qtyRusakButir) / _populasi) * 100;
       rusak = (_qtyRusakButir / _populasi) * 100;
     }
+
+    // Kalkulasi Realtime Panen & Potensi Kas (Telur Utuh)
+    final double totalDiKandangKg = _sisaTelurKemarinKg + _qtyUtuhKg;
+    final int potensiKas = (totalDiKandangKg / 15.0).floor();
+    final double sisaMengendapKg = totalDiKandangKg % 15.0;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF9FDF9),
@@ -225,292 +288,441 @@ class _InputProduksiScreenState extends State<InputProduksiScreen> {
           icon: const Icon(Icons.arrow_back, color: Color(0xFF1E293B)),
           onPressed: () => context.pop(),
         ),
-        title: const Text('Input Produksi Harian', style: TextStyle(color: Color(0xFF1E293B), fontSize: 16, fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Input Panen Harian',
+          style: TextStyle(color: Color(0xFF1E293B), fontSize: 16, fontWeight: FontWeight.bold),
+        ),
         centerTitle: true,
       ),
       body: _isLoadingForm
-        ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
-        : _formError.isNotEmpty
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.error_outline, color: Colors.red, size: 48),
-                  const SizedBox(height: 16),
-                  Text(_formError, style: const TextStyle(color: Colors.red)),
-                  const SizedBox(height: 16),
-                  ElevatedButton(onPressed: _fetchForm, child: const Text('Coba Lagi')),
-                ],
-              ),
-            )
-          : SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  KandangHeaderCard(
-                    kandangName: kandangName,
-                    subtitleText: 'Update harian produksi telur',
-                    icon: Icons.cottage_outlined,
-                  ),
-                  const SizedBox(height: 24),
-
-                  // CARD PERSENTASE
-                  Row(
+          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+          : _formError.isNotEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // Produktivitas Card
-                      Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF2F6F3),
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  const Icon(Icons.trending_up, color: Color(0xFF166534), size: 16),
-                                  const SizedBox(width: 8),
-                                  const Text(
-                                    'Produktivitas',
-                                    style: TextStyle(fontSize: 13, color: Color(0xFF475569), fontWeight: FontWeight.w600),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 12),
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.baseline,
-                                textBaseline: TextBaseline.alphabetic,
-                                children: [
-                                  Text(
-                                    produktivitas.toStringAsFixed(1),
-                                    style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  const Text(
-                                    '%',
-                                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8)),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      // Rusak Card
-                      Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFFF5F5), // Light red bg
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Icon(Icons.show_chart, color: Colors.red.shade700, size: 16),
-                                  const SizedBox(width: 8),
-                                  const Text(
-                                    'Rusak',
-                                    style: TextStyle(fontSize: 13, color: Color(0xFF475569), fontWeight: FontWeight.w600),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 12),
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.baseline,
-                                textBaseline: TextBaseline.alphabetic,
-                                children: [
-                                  Text(
-                                    rusak.toStringAsFixed(1),
-                                    style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  const Text(
-                                    '%',
-                                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8)),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
+                      const Icon(Icons.error_outline, color: Colors.red, size: 48),
+                      const SizedBox(height: 16),
+                      Text(_formError, style: const TextStyle(color: Colors.red)),
+                      const SizedBox(height: 16),
+                      ElevatedButton(onPressed: _fetchForm, child: const Text('Coba Lagi')),
                     ],
                   ),
-                  const SizedBox(height: 24),
+                )
+              : SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      KandangHeaderCard(
+                        kandangName: kandangName,
+                        subtitleText: 'Pencatatan Panen Telur (Satuan Kg)',
+                        icon: Icons.cottage_outlined,
+                      ),
+                      const SizedBox(height: 16),
 
-                  // TAB BAR TOGGLE (Utuh / Rusak)
-                  Container(
-                    height: 54,
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF1F5F9), // Slate 100
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: () => setState(() => _selectedTabIndex = 0),
-                            child: Container(
-                              alignment: Alignment.center,
-                              decoration: BoxDecoration(
-                                color: _selectedTabIndex == 0 ? Colors.white : Colors.transparent,
-                                borderRadius: BorderRadius.circular(8),
-                                boxShadow: _selectedTabIndex == 0 ? [
-                                  BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2)),
-                                ] : [],
-                              ),
-                              child: Text(
-                                'Telur Utuh',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: _selectedTabIndex == 0 ? const Color(0xFF166534) : const Color(0xFF64748B),
+                      // BANNER INFORMASI ATAS: SISA KEMARIN
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEFF6FF), // Soft Blue
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFFBFDBFE)),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.inventory_2_outlined, color: Color(0xFF2563EB), size: 20),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: RichText(
+                                text: TextSpan(
+                                  style: const TextStyle(fontSize: 13, color: Color(0xFF1E3A8A)),
+                                  children: [
+                                    const TextSpan(text: 'Sisa Telur Kemarin di Kandang: '),
+                                    TextSpan(
+                                      text: '${_sisaTelurKemarinKg.toStringAsFixed(1)} Kg',
+                                      style: const TextStyle(fontWeight: FontWeight.bold),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // TANGGAL PANEN PICKER
+                      GestureDetector(
+                        onTap: () async {
+                          final picked = await showDatePicker(
+                            context: context,
+                            initialDate: _tanggalPanen,
+                            firstDate: DateTime(2025),
+                            lastDate: DateTime.now(),
+                          );
+                          if (picked != null) {
+                            setState(() => _tanggalPanen = picked);
+                          }
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.grey.shade300),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.calendar_today_rounded, size: 18, color: AppColors.primary),
+                              const SizedBox(width: 10),
+                              const Text('Tanggal Panen:', style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+                              const SizedBox(width: 8),
+                              Text(
+                                '${_tanggalPanen.day}/${_tanggalPanen.month}/${_tanggalPanen.year}',
+                                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                              ),
+                              const Spacer(),
+                              const Icon(Icons.keyboard_arrow_down, color: Color(0xFF64748B)),
+                            ],
                           ),
                         ),
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: () => setState(() => _selectedTabIndex = 1),
+                      ),
+                      const SizedBox(height: 20),
+
+                      // CARD PERSENTASE PRODUKTIVITAS
+                      Row(
+                        children: [
+                          Expanded(
                             child: Container(
-                              alignment: Alignment.center,
+                              padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: _selectedTabIndex == 1 ? Colors.white : Colors.transparent,
-                                borderRadius: BorderRadius.circular(8),
-                                boxShadow: _selectedTabIndex == 1 ? [
-                                  BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2)),
-                                ] : [],
+                                color: const Color(0xFFF2F6F3),
+                                borderRadius: BorderRadius.circular(16),
                               ),
-                              child: Text(
-                                'Telur Rusak',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: _selectedTabIndex == 1 ? const Color(0xFF166534) : const Color(0xFF64748B),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Row(
+                                    children: [
+                                      Icon(Icons.trending_up, color: Color(0xFF166534), size: 16),
+                                      SizedBox(width: 8),
+                                      Text(
+                                        'Produktivitas',
+                                        style: TextStyle(fontSize: 13, color: Color(0xFF475569), fontWeight: FontWeight.w600),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                                    textBaseline: TextBaseline.alphabetic,
+                                    children: [
+                                      Text(
+                                        produktivitas.toStringAsFixed(1),
+                                        style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      const Text('%', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8))),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFFF5F5),
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(Icons.show_chart, color: Colors.red.shade700, size: 16),
+                                      const SizedBox(width: 8),
+                                      const Text(
+                                        'Rusak',
+                                        style: TextStyle(fontSize: 13, color: Color(0xFF475569), fontWeight: FontWeight.w600),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                                    textBaseline: TextBaseline.alphabetic,
+                                    children: [
+                                      Text(
+                                        rusak.toStringAsFixed(1),
+                                        style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      const Text('%', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8))),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+
+                      // TAB BAR TOGGLE (Utuh / Rusak)
+                      Container(
+                        height: 50,
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () => setState(() => _selectedTabIndex = 0),
+                                child: Container(
+                                  alignment: Alignment.center,
+                                  decoration: BoxDecoration(
+                                    color: _selectedTabIndex == 0 ? Colors.white : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(8),
+                                    boxShadow: _selectedTabIndex == 0
+                                        ? [
+                                            BoxShadow(
+                                              color: Colors.black.withValues(alpha: 0.05),
+                                              blurRadius: 4,
+                                              offset: const Offset(0, 2),
+                                            )
+                                          ]
+                                        : [],
+                                  ),
+                                  child: Text(
+                                    'Telur Utuh',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: _selectedTabIndex == 0 ? const Color(0xFF166534) : const Color(0xFF64748B),
+                                    ),
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // INPUT FORM CARD
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4)),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Jumlah Butir Input
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text('Jumlah Butir', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFEEF2F6),
-                                borderRadius: BorderRadius.circular(12),
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () => setState(() => _selectedTabIndex = 1),
+                                child: Container(
+                                  alignment: Alignment.center,
+                                  decoration: BoxDecoration(
+                                    color: _selectedTabIndex == 1 ? Colors.white : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(8),
+                                    boxShadow: _selectedTabIndex == 1
+                                        ? [
+                                            BoxShadow(
+                                              color: Colors.black.withValues(alpha: 0.05),
+                                              blurRadius: 4,
+                                              offset: const Offset(0, 2),
+                                            )
+                                          ]
+                                        : [],
+                                  ),
+                                  child: Text(
+                                    'Telur Rusak/Bentes',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: _selectedTabIndex == 1 ? const Color(0xFF166534) : const Color(0xFF64748B),
+                                    ),
+                                  ),
+                                ),
                               ),
-                              child: const Text('PCS', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF64748B))),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 12),
-                        _IntegerInput(
-                          value: _selectedTabIndex == 0 ? _qtyUtuhButir : _qtyRusakButir,
-                          onChanged: (val) {
-                            setState(() {
-                              if (_selectedTabIndex == 0) {
-                                _qtyUtuhButir = val;
-                              } else {
-                                _qtyRusakButir = val;
-                              }
-                            });
-                          },
-                          accentColor: const Color(0xFF166534),
-                        ),
-                        
-                        const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 20),
-                          child: Divider(color: Color(0xFFF1F5F9), thickness: 1.5),
-                        ),
+                      ),
+                      const SizedBox(height: 16),
 
-                        // Berat Utuh Input
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              _selectedTabIndex == 0 ? 'Berat Utuh' : 'Berat Rusak', 
-                              style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E293B))
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFEEF2F6),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Text('KG', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF64748B))),
+                      // INPUT FORM CARD
+                      Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.03),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 12),
-                        _DecimalInput(
-                          value: _selectedTabIndex == 0 ? _qtyUtuhKg : _qtyRusakKg,
-                          onChanged: (val) {
-                            setState(() {
-                              if (_selectedTabIndex == 0) {
-                                _qtyUtuhKg = val;
-                              } else {
-                                _qtyRusakKg = val;
-                              }
-                            });
-                          },
-                          accentColor: const Color(0xFF166534),
-                        ),
-                      ],
-                    ),
-                  ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Jumlah Butir Input
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text('Jumlah Butir', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFEEF2F6),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: const Text('BUTIR', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF64748B))),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            _IntegerInput(
+                              value: _selectedTabIndex == 0 ? _qtyUtuhButir : _qtyRusakButir,
+                              onChanged: (val) {
+                                setState(() {
+                                  if (_selectedTabIndex == 0) {
+                                    _qtyUtuhButir = val;
+                                  } else {
+                                    _qtyRusakButir = val;
+                                  }
+                                });
+                              },
+                              accentColor: const Color(0xFF166534),
+                            ),
 
-                  const SizedBox(height: 40),
+                            const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 20),
+                              child: Divider(color: Color(0xFFF1F5F9), thickness: 1.5),
+                            ),
+
+                            // Berat Kg Input
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  _selectedTabIndex == 0 ? 'Berat Panen Hari Ini (Utuh)' : 'Berat Rusak Hari Ini',
+                                  style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFEEF2F6),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: const Text('KG', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF64748B))),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            _DecimalInput(
+                              value: _selectedTabIndex == 0 ? _qtyUtuhKg : _qtyRusakKg,
+                              onChanged: (val) {
+                                setState(() {
+                                  if (_selectedTabIndex == 0) {
+                                    _qtyUtuhKg = val;
+                                  } else {
+                                    _qtyRusakKg = val;
+                                  }
+                                });
+                              },
+                              accentColor: const Color(0xFF166534),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+
+                      // LIVE PREVIEW KALKULASI KAS & SISA MENGENDAP
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFFBEB), // Warm amber background
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: const Color(0xFFFDE68A)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Row(
+                              children: [
+                                Icon(Icons.calculate_outlined, color: Color(0xFFD97706), size: 20),
+                                SizedBox(width: 8),
+                                Text(
+                                  'Kalkulasi Persediaan Kandang (Utuh)',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                    color: Color(0xFF92400E),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text('Total di Kandang (Sisa + Hari Ini):', style: TextStyle(fontSize: 13, color: Color(0xFF78350F))),
+                                Text(
+                                  '${totalDiKandangKg.toStringAsFixed(1)} Kg',
+                                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF78350F)),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 6),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text('Potensi Siap Setor (@ 15 Kg):', style: TextStyle(fontSize: 13, color: Color(0xFF78350F))),
+                                Text(
+                                  '$potensiKas Kas (${(potensiKas * 15).toStringAsFixed(1)} Kg)',
+                                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF166534)),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 6),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text('Sisa Pecahan Mengendap:', style: TextStyle(fontSize: 13, color: Color(0xFF78350F))),
+                                Text(
+                                  '${sisaMengendapKg.toStringAsFixed(1)} Kg',
+                                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFFB45309)),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 40),
+                    ],
+                  ),
+                ),
+      bottomNavigationBar: _isLoadingForm || _formError.isNotEmpty
+          ? null
+          : Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, -5),
+                  ),
                 ],
               ),
+              child: SafeArea(
+                child: SizedBox(
+                  child: AppButton(
+                    onPressed: _submitProduksi,
+                    isLoading: _isSubmitting,
+                    text: 'Simpan Panen Kandang',
+                    trailingIcon: Icons.check_circle,
+                  ),
+                ),
+              ),
             ),
-      bottomNavigationBar: _isLoadingForm || _formError.isNotEmpty ? null : Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, -5)),
-          ],
-        ),
-        child: SafeArea(
-          child: SizedBox(
-            child: AppButton(
-              onPressed: _submitProduksi,
-              isLoading: _isSubmitting,
-              text: 'Simpan Data',
-              trailingIcon: Icons.check_circle,
-            ),
-          ),
-        ),
-      ),
     );
   }
 }
@@ -549,7 +761,8 @@ class _IntegerInputState extends State<_IntegerInput> {
       if (_controller.text != widget.value.toString()) {
         _controller.text = widget.value.toString();
         _controller.selection = TextSelection.fromPosition(
-            TextPosition(offset: _controller.text.length));
+          TextPosition(offset: _controller.text.length),
+        );
       }
     }
   }
@@ -562,8 +775,8 @@ class _IntegerInputState extends State<_IntegerInput> {
 
   @override
   Widget build(BuildContext context) {
-    final bg = const Color(0xFFF1F5F9); 
-    
+    final bg = const Color(0xFFF1F5F9);
+
     return Container(
       height: 54,
       decoration: BoxDecoration(
@@ -638,7 +851,7 @@ class _IntegerInputState extends State<_IntegerInput> {
 }
 
 // ============================================================================
-// WIDGET INPUT DECIMAL (BERAT)
+// WIDGET INPUT DECIMAL (BERAT KG)
 // ============================================================================
 class _DecimalInput extends StatefulWidget {
   final double value;
@@ -672,7 +885,8 @@ class _DecimalInputState extends State<_DecimalInput> {
       if ((currentValue - widget.value).abs() > 0.01) {
         _controller.text = widget.value.toStringAsFixed(1);
         _controller.selection = TextSelection.fromPosition(
-            TextPosition(offset: _controller.text.length));
+          TextPosition(offset: _controller.text.length),
+        );
       }
     }
   }
@@ -697,7 +911,7 @@ class _DecimalInputState extends State<_DecimalInput> {
   @override
   Widget build(BuildContext context) {
     final bg = const Color(0xFFF1F5F9);
-    
+
     return Container(
       height: 54,
       decoration: BoxDecoration(

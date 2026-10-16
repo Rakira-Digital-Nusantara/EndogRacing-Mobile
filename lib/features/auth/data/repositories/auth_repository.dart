@@ -1,4 +1,4 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../../../../core/constants/api_endpoints.dart';
@@ -78,12 +78,20 @@ class AuthRepository {
   /// Logout dari Laravel API.
   Future<void> logout() async {
     try {
-      await _dioClient.dio.post(ApiEndpoints.logout);
+      final token = await _storage.read(key: 'auth_token');
+      if (token != null && token.isNotEmpty) {
+        await _dioClient.dio.post(ApiEndpoints.logout);
+      }
     } catch (_) {
     } finally {
-      await _storage.delete(key: 'auth_token');
-      await _storage.delete(key: 'kandang_data');
+      await clearLocalAuth();
     }
+  }
+
+  /// Membersihkan penyimpanan autentikasi lokal tanpa memanggil API ke server.
+  Future<void> clearLocalAuth() async {
+    await _storage.delete(key: 'auth_token');
+    await _storage.delete(key: 'kandang_data');
   }
 
   /// Mengecek apakah ada token tersimpan di HP.
