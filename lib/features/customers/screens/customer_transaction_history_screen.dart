@@ -35,6 +35,9 @@ class _CustomerTransactionHistoryScreenState extends State<CustomerTransactionHi
     final customerName = widget.customer['customer_name']?.toString() ?? widget.customer['name']?.toString() ?? 'Unknown Customer';
     final customerCode = widget.customer['customer_code']?.toString() ?? widget.customer['code']?.toString() ?? 'CST-XXX';
     final sisaPiutang = double.tryParse(widget.customer['sisa_piutang']?.toString() ?? '0') ?? 0.0;
+    final isNetting = widget.customer['is_netting_partner'] == true ||
+        widget.customer['is_netting_partner'] == 1 ||
+        widget.customer['is_netting_partner']?.toString() == 'true';
 
     return Scaffold(
       backgroundColor: const Color(0xFFF4F7FA), // Softer background
@@ -62,8 +65,10 @@ class _CustomerTransactionHistoryScreenState extends State<CustomerTransactionHi
             margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [AppColors.primary, Color(0xFF1E3A8A)],
+              gradient: LinearGradient(
+                colors: isNetting 
+                    ? [Colors.amber.shade800, const Color(0xFF1E3A8A)]
+                    : [AppColors.primary, const Color(0xFF1E3A8A)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -112,20 +117,50 @@ class _CustomerTransactionHistoryScreenState extends State<CustomerTransactionHi
                             ),
                           ),
                           const SizedBox(height: 4),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              customerCode,
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: Colors.white,
-                                fontWeight: FontWeight.w600,
+                          Wrap(
+                            spacing: 6,
+                            runSpacing: 4,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.2),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  customerCode,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
                               ),
-                            ),
+                              if (isNetting)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: Colors.amber.shade300,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.handshake_rounded, size: 12, color: Colors.amber.shade900),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        'Mitra Netting',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.amber.shade900,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                            ],
                           ),
                         ],
                       ),

@@ -255,6 +255,11 @@ class _RekapPenjualanScreenState extends State<RekapPenjualanScreen> {
                     final trx = transactions[index];
                     final status = trx['status']?.toString().toUpperCase() ?? 'PIUTANG';
                     final isLunas = status == 'LUNAS';
+                    final isNetting = trx['is_netting_partner'] == true ||
+                        trx['is_netting_partner'] == 1 ||
+                        trx['is_netting_partner']?.toString() == 'true' ||
+                        (trx['payment_method'] ?? trx['opsi_bayar'] ?? '').toString().toLowerCase().contains('netting') ||
+                        (trx['catatan'] ?? trx['keterangan'] ?? '').toString().toLowerCase().contains('netting');
                     
                     final customerName = trx['customer_name']?.toString() ?? 'Unknown Customer';
                     final invoiceNumber = trx['invoice_number']?.toString() ?? '-';
@@ -267,7 +272,9 @@ class _RekapPenjualanScreenState extends State<RekapPenjualanScreen> {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.grey.shade100),
+                        border: Border.all(
+                          color: isNetting ? Colors.amber.shade200 : Colors.grey.shade100,
+                        ),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withValues(alpha: 0.02),
@@ -282,12 +289,16 @@ class _RekapPenjualanScreenState extends State<RekapPenjualanScreen> {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                             decoration: BoxDecoration(
-                              color: isLunas ? Colors.green.withValues(alpha: 0.1) : Colors.orange.withValues(alpha: 0.1),
+                              color: isNetting 
+                                  ? Colors.amber.withValues(alpha: 0.15)
+                                  : (isLunas ? Colors.green.withValues(alpha: 0.1) : Colors.orange.withValues(alpha: 0.1)),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Icon(
-                              isLunas ? Icons.check_circle_rounded : Icons.schedule_rounded, 
-                              color: isLunas ? Colors.green : Colors.orange, 
+                              isNetting
+                                  ? Icons.handshake_rounded
+                                  : (isLunas ? Icons.check_circle_rounded : Icons.schedule_rounded), 
+                              color: isNetting ? Colors.amber.shade900 : (isLunas ? Colors.green : Colors.orange), 
                               size: 20
                             ),
                           ),
@@ -296,7 +307,36 @@ class _RekapPenjualanScreenState extends State<RekapPenjualanScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(customerName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.textPrimary)),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        customerName,
+                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.textPrimary),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    if (isNetting) ...[
+                                      const SizedBox(width: 6),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: Colors.amber.shade100,
+                                          borderRadius: BorderRadius.circular(4),
+                                          border: Border.all(color: Colors.amber.shade600, width: 0.8),
+                                        ),
+                                        child: Text(
+                                          'Netting',
+                                          style: TextStyle(
+                                            fontSize: 9,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.amber.shade900,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
                                 const SizedBox(height: 4),
                                 Text('$invoiceNumber • $qty Kg', style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
                               ],
@@ -308,11 +348,11 @@ class _RekapPenjualanScreenState extends State<RekapPenjualanScreen> {
                               Text(CurrencyFormatter.format(total), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.primary)),
                               const SizedBox(height: 4),
                               Text(
-                                status, 
+                                isNetting ? 'NETTING (TEMPO)' : status, 
                                 style: TextStyle(
                                   fontSize: 10, 
                                   fontWeight: FontWeight.bold, 
-                                  color: isLunas ? Colors.green : Colors.orange,
+                                  color: isNetting ? Colors.amber.shade900 : (isLunas ? Colors.green : Colors.orange),
                                 ),
                               ),
                             ],

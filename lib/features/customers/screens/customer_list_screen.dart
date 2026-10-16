@@ -211,6 +211,9 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                           final address = c['address']?.toString() ?? '-';
                           final phone = c['phone']?.toString() ?? '-';
                           final piutang = double.tryParse(c['sisa_piutang']?.toString() ?? '0') ?? 0.0;
+                          final isNetting = c['is_netting_partner'] == true ||
+                              c['is_netting_partner'] == 1 ||
+                              c['is_netting_partner']?.toString() == 'true';
                           return Container(
                             margin: const EdgeInsets.only(bottom: 12),
                             decoration: BoxDecoration(
@@ -235,14 +238,16 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                                   height: 44,
                                   decoration: BoxDecoration(
                                     gradient: LinearGradient(
-                                      colors: [AppColors.primary, AppColors.primary.withValues(alpha: 0.7)],
+                                      colors: isNetting 
+                                          ? [Colors.amber.shade700, Colors.amber.shade500]
+                                          : [AppColors.primary, AppColors.primary.withValues(alpha: 0.7)],
                                       begin: Alignment.topLeft,
                                       end: Alignment.bottomRight,
                                     ),
                                     shape: BoxShape.circle,
                                     boxShadow: [
                                       BoxShadow(
-                                        color: AppColors.primary.withValues(alpha: 0.3),
+                                        color: (isNetting ? Colors.amber : AppColors.primary).withValues(alpha: 0.3),
                                         blurRadius: 6,
                                         offset: const Offset(0, 3),
                                       ),
@@ -255,13 +260,84 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                                     ),
                                   ),
                                 ),
-                                title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.textPrimary)),
+                                title: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        name,
+                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.textPrimary),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    if (isNetting) ...[
+                                      const SizedBox(width: 6),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: Colors.amber.shade100,
+                                          borderRadius: BorderRadius.circular(6),
+                                          border: Border.all(color: Colors.amber.shade600, width: 0.8),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(Icons.label_outline_rounded, size: 11, color: Colors.amber.shade900),
+                                            const SizedBox(width: 3),
+                                            Text(
+                                              'Mitra Netting',
+                                              style: TextStyle(
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.amber.shade900,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
                                 subtitle: Text(code, style: TextStyle(fontSize: 12, color: Colors.grey.shade500, fontWeight: FontWeight.w500)),
                                 childrenPadding: const EdgeInsets.all(16).copyWith(top: 0),
                                 expandedCrossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
                                   Divider(color: Colors.grey.shade100, height: 1),
                                   const SizedBox(height: 12),
+                                  
+                                  if (isNetting) ...[
+                                    Container(
+                                      margin: const EdgeInsets.only(bottom: 12),
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: Colors.amber.shade50,
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(color: Colors.amber.shade300),
+                                      ),
+                                      child: Row(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Icon(Icons.handshake_rounded, color: Colors.amber.shade800, size: 18),
+                                          const SizedBox(width: 10),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  'Mitra Netting Kantor',
+                                                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.amber.shade900),
+                                                ),
+                                                const SizedBox(height: 2),
+                                                Text(
+                                                  'Pelanggan ini menyuplai pakan dan membeli telur. Pembayaran diselesaikan via kompensasi / netting tagihan pakan oleh admin kantor (bukan uang tunai ke sales).',
+                                                  style: TextStyle(fontSize: 11, color: Colors.amber.shade900, height: 1.3),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
                                   
                                   // Alamat & Telepon (Dummy)
                                   Container(

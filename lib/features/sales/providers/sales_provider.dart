@@ -10,9 +10,11 @@ class SalesProvider with ChangeNotifier {
 
   bool _isLoading = false;
   String _error = '';
+  String? _errorCode;
 
   bool get isLoading => _isLoading;
   String get error => _error;
+  String? get errorCode => _errorCode;
 
   // Master Data
   List<Map<String, dynamic>> _customers = [];
@@ -84,17 +86,34 @@ class SalesProvider with ChangeNotifier {
           if (data.containsKey('customers') && data['customers'] is List) {
             _customers = (data['customers'] as List)
                 .map(
-                  (e) => {
-                    'code': e['customer_code'],
-                    'name': e['customer_name'],
-                    'saldo': e['saldo_deposit'] ?? 0,
+                  (e) {
+                    final isNetting = e['is_netting_partner'] == true ||
+                        e['is_netting_partner'] == 1 ||
+                        e['is_netting_partner']?.toString() == 'true';
+                    return {
+                      'code': e['customer_code'] ?? e['code'],
+                      'name': e['customer_name'] ?? e['name'],
+                      'saldo': e['saldo_deposit'] ?? e['saldo'] ?? 0,
+                      'is_netting_partner': isNetting,
+                      if (e['phone'] != null) 'phone': e['phone'],
+                      if (e['address'] != null) 'address': e['address'],
+                    };
                   },
                 )
                 .toList();
           } else if (data.containsKey('list_customer') &&
               data['list_customer'] is List) {
             _customers = (data['list_customer'] as List)
-                .map((e) => Map<String, dynamic>.from(e as Map))
+                .map((e) {
+                  final map = Map<String, dynamic>.from(e as Map);
+                  final isNetting = map['is_netting_partner'] == true ||
+                      map['is_netting_partner'] == 1 ||
+                      map['is_netting_partner']?.toString() == 'true';
+                  map['is_netting_partner'] = isNetting;
+                  map['code'] = map['code'] ?? map['customer_code'];
+                  map['name'] = map['name'] ?? map['customer_name'];
+                  return map;
+                })
                 .toList();
           }
 
@@ -137,6 +156,7 @@ class SalesProvider with ChangeNotifier {
   Future<bool> submitPenjualan(Map<String, dynamic> payload) async {
     _isLoading = true;
     _error = '';
+    _errorCode = null;
     notifyListeners();
 
     try {
@@ -150,11 +170,18 @@ class SalesProvider with ChangeNotifier {
       if (e is DioException) {
         if (e.response?.data is Map) {
           final data = e.response!.data as Map;
+          if (data.containsKey('code')) {
+            _errorCode = data['code']?.toString();
+          }
           if (data.containsKey('errors')) {
             _error = data['errors'].toString();
           } else {
             _error = data['message']?.toString() ?? 'Terjadi kesalahan server';
-            final Map<String, dynamic> extraData = Map.from(data)..remove('message')..remove('exception');
+            final Map<String, dynamic> extraData = Map.from(data)
+              ..remove('message')
+              ..remove('exception')
+              ..remove('code')
+              ..remove('status');
             if (extraData.isNotEmpty) {
               _error += '\nDetail: $extraData';
             }

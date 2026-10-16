@@ -187,6 +187,36 @@ class _CustomerInputScreenState extends State<CustomerInputScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      if (widget.customer != null &&
+                          (widget.customer!['is_netting_partner'] == true ||
+                              widget.customer!['is_netting_partner'] == 1 ||
+                              widget.customer!['is_netting_partner']?.toString() == 'true')) ...[
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 20),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.amber.shade50,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.amber.shade300),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.handshake_rounded, color: Colors.amber.shade900, size: 20),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  'Pelanggan ini terdaftar sebagai Mitra Netting Kantor (Kompensasi Pakan).',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.amber.shade900,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                       _buildInputLabel('Nama Pelanggan / Toko', true),
                       TextField(
                         controller: _nameCtrl,

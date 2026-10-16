@@ -40,6 +40,39 @@ class _InputPenjualanScreenState extends State<InputPenjualanScreen> {
     });
   }
 
+  Map<String, dynamic>? get _selectedCustomerMap {
+    if (_selectedCustomerCode == null) return null;
+    final provider = context.read<SalesProvider>();
+    try {
+      return provider.customers.firstWhere(
+        (c) => (c['code'] ?? c['customer_code']) == _selectedCustomerCode,
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
+  bool get _isNettingPartner {
+    final c = _selectedCustomerMap;
+    if (c == null) return false;
+    return c['is_netting_partner'] == true ||
+        c['is_netting_partner'] == 1 ||
+        c['is_netting_partner']?.toString() == 'true';
+  }
+
+  void _onCustomerChanged(String? val) {
+    if (val == null) return;
+    setState(() {
+      _selectedCustomerCode = val;
+      // If selected customer is a netting partner, auto-lock payment method to Belum Bayar
+      if (_isNettingPartner) {
+        _paymentMethod = 'Belum Bayar';
+        _uangDiterimaCtrl.text = '0';
+        _jatuhTempoDate ??= DateTime.now().add(const Duration(days: 7));
+      }
+    });
+  }
+
   void _onProductChanged(String? val) {
     if (val == null) return;
     setState(() {
@@ -56,13 +89,15 @@ class _InputPenjualanScreenState extends State<InputPenjualanScreen> {
   }
 
   void _updateUangDiterima() {
-    if (_paymentMethod == 'Lunas') {
-      _uangDiterimaCtrl.text = _calculatedTotal.toStringAsFixed(0);
-    } else if (_paymentMethod == 'Belum Bayar') {
+    if (_isNettingPartner || _paymentMethod == 'Belum Bayar') {
       _uangDiterimaCtrl.text = '0';
+    } else if (_paymentMethod == 'Lunas') {
+      _uangDiterimaCtrl.text = _calculatedTotal.toStringAsFixed(0);
     } else if (_paymentMethod == 'Sebagian') {
-      if (_uangDiterimaCtrl.text.isEmpty || _uangDiterimaCtrl.text == '0' || _uangDiterimaCtrl.text == _calculatedTotal.toStringAsFixed(0)) {
-         _uangDiterimaCtrl.text = ''; // Kosongkan agar diisi manual
+      if (_uangDiterimaCtrl.text.isEmpty ||
+          _uangDiterimaCtrl.text == '0' ||
+          _uangDiterimaCtrl.text == _calculatedTotal.toStringAsFixed(0)) {
+        _uangDiterimaCtrl.text = ''; // Kosongkan agar diisi manual
       }
     }
   }
@@ -76,14 +111,103 @@ class _InputPenjualanScreenState extends State<InputPenjualanScreen> {
   bool get _canSubmit {
     if (_selectedCustomerCode == null ||
         _selectedProductSku == null ||
-        _selectedProductMap == null)
+        _selectedProductMap == null) {
       return false;
+    }
     if (_qty <= 0) return false;
     return true;
   }
 
+  void _showMitraNettingDialog(String errorMsg) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.amber.shade100,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.handshake_rounded, color: Colors.amber.shade900, size: 22),
+            ),
+            const SizedBox(width: 10),
+            const Expanded(
+              child: Text(
+                'Mitra Netting Kantor',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.amber.shade50,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.amber.shade300),
+              ),
+              child: Text(
+                errorMsg.isNotEmpty
+                    ? errorMsg.replaceAll(RegExp(r'[\{\}\[\]]'), '')
+                    : 'Pelanggan ini adalah Mitra Netting Kantor. Pembayaran invoice tidak diserahkan tunai ke sales, melainkan diselesaikan melalui pemotongan tagihan pakan oleh admin kantor.',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.amber.shade900,
+                  height: 1.4,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Opsi pembayaran wajib diatur ke "Belum Bayar" (Tempo) dengan nominal dibayar Rp 0.',
+              style: TextStyle(fontSize: 12, color: Colors.black87),
+            ),
+          ],
+        ),
+        actions: [
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+              onPressed: () {
+                Navigator.pop(ctx);
+                setState(() {
+                  _paymentMethod = 'Belum Bayar';
+                  _uangDiterimaCtrl.text = '0';
+                  _jatuhTempoDate ??= DateTime.now().add(const Duration(days: 7));
+                });
+              },
+              child: const Text('Atur ke Belum Bayar', style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _submitForm() async {
     if (!_canSubmit) return;
+
+    // Mitra netting enforcement
+    if (_isNettingPartner) {
+      _paymentMethod = 'Belum Bayar';
+      _uangDiterimaCtrl.text = '0';
+      _jatuhTempoDate ??= DateTime.now().add(const Duration(days: 7));
+    }
 
     if ((_paymentMethod == 'Sebagian' || _paymentMethod == 'Belum Bayar') && _jatuhTempoDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -92,9 +216,11 @@ class _InputPenjualanScreenState extends State<InputPenjualanScreen> {
       return;
     }
 
-    final uangDiterima = double.tryParse(_uangDiterimaCtrl.text.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
+    final double uangDiterima = _isNettingPartner 
+        ? 0.0 
+        : (double.tryParse(_uangDiterimaCtrl.text.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0.0);
 
-    if (_paymentMethod == 'Sebagian' && uangDiterima <= 0) {
+    if (!_isNettingPartner && _paymentMethod == 'Sebagian' && uangDiterima <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Nominal Dibayar harus lebih dari 0'), backgroundColor: Colors.red),
       );
@@ -104,9 +230,9 @@ class _InputPenjualanScreenState extends State<InputPenjualanScreen> {
     final payload = {
       'customer_code': _selectedCustomerCode,
       'tanggal': DateTime.now().toIso8601String().split('T')[0],
-      'opsi_bayar': _paymentMethod,
+      'opsi_bayar': _isNettingPartner ? 'Belum Bayar' : _paymentMethod,
       'nominal_dibayar': uangDiterima,
-      if ((_paymentMethod == 'Sebagian' || _paymentMethod == 'Belum Bayar') && _jatuhTempoDate != null)
+      if ((_paymentMethod == 'Sebagian' || _paymentMethod == 'Belum Bayar' || _isNettingPartner) && _jatuhTempoDate != null)
         'tgl_jatuh_tempo': _jatuhTempoDate!.toIso8601String().split('T')[0],
       'catatan': _keteranganCtrl.text,
       'details_jual': [
@@ -118,9 +244,8 @@ class _InputPenjualanScreenState extends State<InputPenjualanScreen> {
       ],
     };
 
-    final success = await context.read<SalesProvider>().submitPenjualan(
-      payload,
-    );
+    final provider = context.read<SalesProvider>();
+    final success = await provider.submitPenjualan(payload);
     if (success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -140,7 +265,14 @@ class _InputPenjualanScreenState extends State<InputPenjualanScreen> {
       );
       Navigator.pop(context);
     } else if (mounted) {
-      final err = context.read<SalesProvider>().error;
+      if (provider.errorCode == 'MITRA_NETTING' ||
+          provider.error.toLowerCase().contains('mitra netting') ||
+          provider.error.contains('MITRA_NETTING')) {
+        _showMitraNettingDialog(provider.error);
+        return;
+      }
+
+      final err = provider.error;
       final cleanErr = err.replaceAll(RegExp(r'[\{\}\[\]]'), '');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -165,11 +297,91 @@ class _InputPenjualanScreenState extends State<InputPenjualanScreen> {
   Widget build(BuildContext context) {
     final sales = context.watch<SalesProvider>();
 
+    final seenCustomerCodes = <String>{};
+    final customerItems = <DropdownMenuItem<String>>[];
+    for (final c in sales.customers) {
+      final code = (c['code'] ?? c['customer_code'])?.toString() ?? '';
+      if (code.isNotEmpty && !seenCustomerCodes.contains(code)) {
+        seenCustomerCodes.add(code);
+        final name = c['name']?.toString() ?? c['customer_name']?.toString() ?? code;
+        final isNetting = c['is_netting_partner'] == true ||
+            c['is_netting_partner'] == 1 ||
+            c['is_netting_partner']?.toString() == 'true';
+        customerItems.add(
+          DropdownMenuItem<String>(
+            value: code,
+            child: Text.rich(
+              TextSpan(
+                text: name,
+                style: const TextStyle(fontSize: 14, color: AppColors.textPrimary),
+                children: [
+                  if (isNetting)
+                    WidgetSpan(
+                      alignment: PlaceholderAlignment.middle,
+                      child: Container(
+                        margin: const EdgeInsets.only(left: 6),
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.amber.shade100,
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: Colors.amber.shade600, width: 0.8),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.label_outline_rounded, size: 11, color: Colors.amber.shade900),
+                            const SizedBox(width: 3),
+                            Text(
+                              'Mitra Netting',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.amber.shade900,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        );
+      }
+    }
+    final effectiveCustomerCode = seenCustomerCodes.contains(_selectedCustomerCode)
+        ? _selectedCustomerCode
+        : null;
+
+    final seenProductSkus = <String>{};
+    final productItems = <DropdownMenuItem<String>>[];
+    for (final p in sales.products) {
+      final sku = (p['sku'] ?? p['sku_product'])?.toString() ?? '';
+      if (sku.isNotEmpty && !seenProductSkus.contains(sku)) {
+        seenProductSkus.add(sku);
+        final name = p['name']?.toString() ?? p['sku_name']?.toString() ?? sku;
+        productItems.add(
+          DropdownMenuItem<String>(
+            value: sku,
+            child: Text(
+              name,
+              style: const TextStyle(fontSize: 14),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        );
+      }
+    }
+    final effectiveProductSku = seenProductSkus.contains(_selectedProductSku)
+        ? _selectedProductSku
+        : null;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        actions: [
-        ],
+        actions: const [],
         title: const Text(
           'Tambah Penjualan',
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
@@ -183,9 +395,34 @@ class _InputPenjualanScreenState extends State<InputPenjualanScreen> {
           ? const Center(
               child: CircularProgressIndicator(color: AppColors.primary),
             )
-          : SizedBox.expand(
-              child: Stack(
-                children: [
+          : sales.customers.isEmpty && sales.error.isNotEmpty
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.error_outline_rounded, color: Colors.red, size: 48),
+                        const SizedBox(height: 12),
+                        Text(
+                          sales.error,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(color: Colors.red),
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton.icon(
+                          onPressed: () => context.read<SalesProvider>().fetchPenjualanForm(),
+                          icon: const Icon(Icons.refresh_rounded),
+                          label: const Text('Coba Lagi'),
+                          style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              : SizedBox.expand(
+                  child: Stack(
+                    children: [
                   // Header Background Gradient
                   Container(
                     width: double.infinity,
@@ -270,49 +507,77 @@ class _InputPenjualanScreenState extends State<InputPenjualanScreen> {
                             // 1. Kustomer
                             _buildInputLabel('Kustomer Tujuan', true),
                             DropdownButtonFormField<String>(
+                              isExpanded: true,
                               decoration: _buildInputDecoration(
                                 'Pilih Kustomer',
                                 Icons.person_outline_rounded,
                               ),
-                              initialValue: _selectedCustomerCode,
-                              items: sales.customers.map((c) {
-                                return DropdownMenuItem<String>(
-                                  value: c['code'],
-                                  child: Text(
-                                    c['name'],
-                                    style: const TextStyle(fontSize: 14),
-                                  ),
-                                );
-                              }).toList(),
-                              onChanged: (val) {
-                                setState(() {
-                                  _selectedCustomerCode = val;
-                                });
-                              },
+                              initialValue: effectiveCustomerCode,
+                              items: customerItems,
+                              onChanged: _onCustomerChanged,
                               icon: const Icon(
                                 Icons.keyboard_arrow_down_rounded,
                                 color: AppColors.primary,
                               ),
                             ),
+                            if (_isNettingPartner) ...[
+                              Container(
+                                margin: const EdgeInsets.only(top: 10),
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.amber.shade50,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: Colors.amber.shade300),
+                                ),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Icon(
+                                      Icons.warning_amber_rounded,
+                                      color: Colors.amber.shade800,
+                                      size: 20,
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            '⚠️ PERHATIAN: Toko ini adalah Mitra Netting Kantor',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.amber.shade900,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            'Pembayaran invoice ini tidak diserahkan ke sales, melainkan diselesaikan melalui pemotongan/kompensasi tagihan pakan oleh admin kantor.',
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              height: 1.35,
+                                              color: Colors.amber.shade900,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                             const SizedBox(height: 24),
 
                             // 2. Produk
                             _buildInputLabel('Produk', true),
                             DropdownButtonFormField<String>(
+                              isExpanded: true,
                               decoration: _buildInputDecoration(
                                 'Pilih Produk',
                                 Icons.egg_alt_rounded,
                               ),
-                              initialValue: _selectedProductSku,
-                              items: sales.products.map((p) {
-                                return DropdownMenuItem<String>(
-                                  value: p['sku'],
-                                  child: Text(
-                                    p['name'],
-                                    style: const TextStyle(fontSize: 14),
-                                  ),
-                                );
-                              }).toList(),
+                              initialValue: effectiveProductSku,
+                              items: productItems,
                               onChanged: _onProductChanged,
                               icon: const Icon(
                                 Icons.keyboard_arrow_down_rounded,
@@ -372,35 +637,90 @@ class _InputPenjualanScreenState extends State<InputPenjualanScreen> {
 
                             // 5. Status Pembayaran
                             _buildInputLabel('Status Pembayaran', true),
-                            DropdownButtonFormField<String>(
-                              decoration: _buildInputDecoration(
-                                'Pilih Status Pembayaran',
-                                Icons.payment_rounded,
+                            if (_isNettingPartner) ...[
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey.shade100,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: Colors.grey.shade300),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.lock_rounded, color: Colors.grey, size: 20),
+                                    const SizedBox(width: 12),
+                                    const Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'Belum Bayar (Tempo)',
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.bold,
+                                              color: Color(0xFF1E293B),
+                                            ),
+                                          ),
+                                          SizedBox(height: 2),
+                                          Text(
+                                            'Terkunci: Kompensasi netting admin kantor',
+                                            style: TextStyle(fontSize: 11, color: Colors.grey),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: Colors.amber.shade100,
+                                        borderRadius: BorderRadius.circular(6),
+                                        border: Border.all(color: Colors.amber.shade400, width: 0.8),
+                                      ),
+                                      child: Text(
+                                        'LOCKED',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.amber.shade900,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                              initialValue: _paymentMethod,
-                              items: _paymentMethods.map((m) {
-                                return DropdownMenuItem<String>(
-                                  value: m,
-                                  child: Text(
-                                    m,
-                                    style: const TextStyle(fontSize: 14),
-                                  ),
-                                );
-                              }).toList(),
-                              onChanged: (val) {
-                                if (val != null) {
-                                  setState(() {
-                                    _paymentMethod = val;
-                                    _updateUangDiterima();
-                                  });
-                                }
-                              },
-                              icon: const Icon(
-                                Icons.keyboard_arrow_down_rounded,
-                                color: AppColors.primary,
+                              const SizedBox(height: 24),
+                            ] else ...[
+                              DropdownButtonFormField<String>(
+                                isExpanded: true,
+                                decoration: _buildInputDecoration(
+                                  'Pilih Status Pembayaran',
+                                  Icons.payment_rounded,
+                                ),
+                                initialValue: _paymentMethod,
+                                items: _paymentMethods.map((m) {
+                                  return DropdownMenuItem<String>(
+                                    value: m,
+                                    child: Text(
+                                      m,
+                                      style: const TextStyle(fontSize: 14),
+                                    ),
+                                  );
+                                }).toList(),
+                                onChanged: (val) {
+                                  if (val != null) {
+                                    setState(() {
+                                      _paymentMethod = val;
+                                      _updateUangDiterima();
+                                    });
+                                  }
+                                },
+                                icon: const Icon(
+                                  Icons.keyboard_arrow_down_rounded,
+                                  color: AppColors.primary,
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 24),
+                              const SizedBox(height: 24),
+                            ],
 
                             if (_paymentMethod == 'Sebagian' || _paymentMethod == 'Belum Bayar') ...[
                               _buildInputLabel('Jatuh Tempo', true),
@@ -476,23 +796,27 @@ class _InputPenjualanScreenState extends State<InputPenjualanScreen> {
                             Container(
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: Colors.orange.withValues(alpha: 0.1),
+                                color: _isNettingPartner
+                                    ? Colors.amber.withValues(alpha: 0.12)
+                                    : Colors.orange.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Row(
                                 children: [
-                                  const Icon(
-                                    Icons.info_outline_rounded,
-                                    color: Colors.orange,
+                                  Icon(
+                                    _isNettingPartner ? Icons.handshake_rounded : Icons.info_outline_rounded,
+                                    color: _isNettingPartner ? Colors.amber.shade900 : Colors.orange,
                                     size: 16,
                                   ),
                                   const SizedBox(width: 8),
                                   Expanded(
                                     child: Text(
-                                      'Pilih metode pembayaran (Tunai, Transfer, Tempo). Jika Tempo, uang diterima dapat 0 dan wajib isi Jatuh Tempo.',
+                                      _isNettingPartner
+                                          ? 'Kustomer ini adalah Mitra Netting. Opsi pembayaran otomatis Belum Bayar dan tidak menerima uang tunai.'
+                                          : 'Pilih metode pembayaran (Tunai, Transfer, Tempo). Jika Tempo, uang diterima dapat 0 dan wajib isi Jatuh Tempo.',
                                       style: TextStyle(
                                         fontSize: 11,
-                                        color: Colors.orange.shade800,
+                                        color: _isNettingPartner ? Colors.amber.shade900 : Colors.orange.shade800,
                                       ),
                                     ),
                                   ),

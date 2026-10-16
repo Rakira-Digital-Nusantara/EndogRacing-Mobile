@@ -500,7 +500,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             const SizedBox(width: 12),
             Expanded(
               child: _buildMetrikCard(
-                title: 'SETOR KE GUDANG',
+                title: 'KAS KE GUDANG',
                 value: isSetorLoading ? '...' : setorKgVal,
                 unit: 'kg',
                 subtitle: isSetorLoading ? null : '$setorKasVal Kas',
